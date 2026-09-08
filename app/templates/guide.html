@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block title %}EcoCycle AI — Material Recycling &amp; Disposal Standards{% endblock %}
+
+{% block content %}
+
+<div class="guide-page-container container">
+  <div class="section-header-center" style="max-width: 680px; margin: 0 auto 36px; text-align: center;">
+    <div class="section-eyebrow" style="display:inline-block; font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--brand-primary); margin-bottom:8px;">Knowledge Base</div>
+    <h1 class="section-title" style="font-size: 2.2rem; font-weight: 800; margin-bottom: 12px;">Waste Sorting &amp; Disposal Guidelines</h1>
+    <p class="section-desc" style="color: var(--text-secondary); font-size: 1rem; line-height: 1.6;">
+      Standard handling protocols, contamination mitigation guidelines, and safe disposal procedures for each material category.
+    </p>
+  </div>
+
+
+  <!-- Refined Guidance Cards Grid -->
+  <div class="guide-cards-grid" id="guideCardsGrid">
+    
+    <!-- 1. Hazardous Card -->
+    <div class="guide-pro-card" data-category="Hazardous" style="--stream-accent: var(--hazardous-color); --stream-bg: var(--hazardous-bg); --stream-border: var(--hazardous-border);">
+      <div class="guide-pro-header">
+        <div class="guide-pro-icon-box" style="background: var(--stream-bg); color: var(--stream-accent); border: 1px solid var(--stream-border);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </div>
+        <div>
+          <div class="guide-stream-tag" style="color: var(--stream-accent); background: var(--stream-bg); border: 1px solid var(--stream-border);">
+            Hazardous Stream
+          </div>
+          <h2 class="guide-pro-title">Hazardous Waste</h2>
+        </div>
+      </div>
+
+      <div class="guide-pro-summary" style="border-left: 3px solid var(--stream-accent);">
+        Do not place in regular household trash. Requires specialized municipal hazardous management.
+      </div>
+
+      <ul class="guide-pro-checklist">
+        <li>
+          <div class="guide-check-icon" style="color: var(--stream-accent); background: var(--stream-bg);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <span>Take to a designated municipal hazardous waste collection center or e-waste drop-off point.</span>
+        </li>
+        <li>
+          <div class="guide-check-icon" style="color: var(--stream-accent); background: var(--stream-bg);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <span>Keep batteries, electronics, chemicals, and paint cans strictly separate from general bins.</span>
+        </li>
+        <li>
+          <div class="guide-check-icon" style="color: var(--stream-accent); background: var(--stream-bg);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <span>Never pour toxic or chemical liquids down drains, sinks, or storm gutters.</span>
+        </li>
+        <li>
+          <div class="guide-check-icon" style="color: var(--stream-accent); background: var(--stream-bg);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <span>Store securely in an upright, sealed container until scheduled drop-off.</span>
+        </li>
+      </ul>
+
+      <div class="guide-pro-footer">
+        <span class="guide-spec-pill">Protocol: Safe Containment</span>
+        <a href="{{ url_for('detect') }}" class="btn btn-secondary btn-sm">
+          <span>Test Scanner</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- 2. Organic Card -->
+    <div class="guide-pro-card" data-category="Organic" style="--stream-accent: var(--organic-color); --stream-bg: var(--organic-bg); --stream-border: var(--organic-border);">
+      <div class="guide-pro-header">
+        <div class="guide-pro-icon-box" style="background: var(--stream-bg); color: var(--organic-text); border: 1px solid var(--stream-border);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2Z"></path>
+            <path d="M12 2v20"></path>
+            <path d="M12 12c-3.5 0-6-2.5-6-6"></path>
+            <path d="M12 16c3.5 0 6-2.5 6-6"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="guide-stream-tag" style="color: var(--organic-text); background: var(--stream-bg); border: 1px solid var(--stream-border);">
+            Organic Stream
+          </div>
+          <h2 class="guide-pro-title">Organic Matter</h2>
+        </div>
+      </div>
+
+      <div class="guide-pro-summary" style="border-left: 3px solid var(--organic-color);">
+        Suitable for municipal green waste collection and aerobic compost enrichment.
+      </div>
+
+      <ul class="guide-pro-checklist">
+        <li>
+          <div class="guide-check-icon" style="color: var(--organic-text); background: var(--stream-bg);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <span>Dispose in dedicated compost containers or municipal organics/food waste bins.</span>
+        </li>
+        <li>
+          <div class="guide-check-icon" style="color: var(--organic-text); background: var(--stream-bg);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <span>Ensure food scraps are free of plastic wrap, stickers, staples, or synthetic tags.</span>
+        </li>
+        <li>
+          <div class="guide-check-icon" style="color: var(--organic-text); background: var(--stream-bg);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <span>Includes fruit peels, vegetable leftovers, coffee grounds, and garden foliage.</span>
+        </li>
+        <li>
+          <div class="guide-check-icon" style="color: var(--organic-text); background: var(--stream-bg);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <span>Keep organic waste isolated from recyclables to avoid paper and cardboard contamination.</span>
+        </li>
+      </ul>
+
+      <div class="guide-pro-footer">
+        <span class="guide-spec-pill">Protocol: Aerobic Compost</span>
+        <a href="{{ url_for('detect') }}" class="btn btn-secondary btn-sm">
+          <span>Test Scanner</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- 3. Recyclable Card -->
+    <div class="guide-pro-card" data-category="Recyclable" style="--stream-accent: var(--recyclable-color); --stream-bg: var(--recyclable-bg); --stream-border: var(--recyclable-border);">
+      <div class="guide-pro-header">
+        <div class="guide-pro-icon-box" style="background: var(--stream-bg); color: var(--recyclable-text); border: 1px solid var(--stream-border);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5"></path>
+            <path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-2.003-3.468"></path>
+            <path d="m14 16 3 3-3 3"></path>
+            <path d="M8.293 13.596 3.5 9.5 8.293 5.404"></path>
+            <path d="m14 8-3-3 3-3"></path>
+            <path d="M12 2v4"></path>
+            <path d="m18 13.5-3-3 3-3"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="guide-stream-tag" style="color: var(--recyclable-text); background: var(--stream-bg); border: 1px solid var(--stream-border);">
+            Recyclable Stream
+          </div>
+          <h2 class="guide-pro-title">Recyclable Materials</h2>
+        </div>
+      </div>
+
+      <div class="guide-pro-summary" style="border-left: 3px solid var(--recyclable-color);">
+        Secondary raw materials intended for mechanical remanufacturing and resource circularity.
+      </div>
+
+      <ul class="guide-pro-checklist">
+        <li>
+          <div class="guide-check-icon" style="color: var(--recyclable-text); background: var(--stream-bg);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <span>Rinse plastic bottles, glass jars, and aluminum cans to remove residual liquids or oils.</span>
+        </li>
+        <li>
+          <div class="guide-check-icon" style="color: var(--recyclable-text); background: var(--stream-bg);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <span>Flatten cardboard packaging and plastic containers to optimize collection volume.</span>
+        </li>
+        <li>
+          <div class="guide-check-icon" style="color: var(--recyclable-text); background: var(--stream-bg);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <span>Check local municipal recycling rules for accepted rigid polymer grades (#1, #2, #5).</span>
+        </li>
+        <li>
+          <div class="guide-check-icon" style="color: var(--recyclable-text); background: var(--stream-bg);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <span>Keep paper and cardboard clean and completely dry to maintain fiber strength.</span>
+        </li>
+      </ul>
+
+      <div class="guide-pro-footer">
+        <span class="guide-spec-pill">Protocol: Closed-Loop Recycling</span>
+        <a href="{{ url_for('detect') }}" class="btn btn-secondary btn-sm">
+          <span>Test Scanner</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Contamination Prevention FAQs -->
+  <div style="margin-top: 50px;">
+    <div class="section-header-center" style="max-width: 600px; margin: 0 auto 30px; text-align: center;">
+      <h2 style="font-size: 1.6rem; font-weight: 700; margin-bottom: 8px;">Contamination Prevention Best Practices</h2>
+      <p style="color: var(--text-secondary); font-size: 0.92rem;">Key habits that maintain secondary material quality at processing facilities.</p>
+    </div>
+
+    <div class="faq-grid">
+      <div class="faq-card">
+        <h3 class="faq-q">Why does food residue ruin recyclable batches?</h3>
+        <p class="faq-a">
+          Grease and liquids seep into paper and cardboard, breaking down cellulose fibers so they cannot be pulped. Always rinse containers thoroughly.
+        </p>
+      </div>
+
+      <div class="faq-card">
+        <h3 class="faq-q">Why can't batteries go in standard trash?</h3>
+        <p class="faq-a">
+          Lithium and alkaline cells contain heavy chemicals and pose severe fire hazards during garbage truck compaction. Always route them to dedicated e-waste facilities.
+        </p>
+      </div>
+
+      <div class="faq-card">
+        <h3 class="faq-q">What belongs in organic composting?</h3>
+        <p class="faq-a">
+          Raw vegetable peels, fruit rinds, coffee grounds, and yard clippings. Avoid treated wood, plastics, and non-compostable packaging.
+        </p>
+      </div>
+
+      <div class="faq-card">
+        <h3 class="faq-q">How does AI classification improve sorting efficiency?</h3>
+        <p class="faq-a">
+          Instant vision pre-classification eliminates cross-contamination before bins are collected, drastically reducing manual sorting costs and landfill diversion rates.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+

@@ -1,0 +1,1743 @@
+{% extends "base.html" %}
+{% block title %}EcoCycle AI — Enterprise Admin Intelligence Console{% endblock %}
+
+{% block content %}
+<div class="admin-shell-layout">
+  <!-- Left Dark Sidebar -->
+  <aside class="admin-dark-sidebar" id="adminSidebar">
+    <div class="admin-sidebar-top">
+      <!-- Brand Logo -->
+      <a href="javascript:void(0)" onclick="switchAdminTab('dashboard')" class="admin-sidebar-brand">
+        <div class="sidebar-brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5"></path>
+            <path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-2.003-3.468"></path>
+            <path d="m14 16 3 3-3 3"></path>
+            <path d="M8.293 13.596 3.5 9.5 8.293 5.404"></path>
+            <path d="m14 8-3-3 3-3"></path>
+            <path d="M12 2v4"></path>
+            <path d="m18 13.5-3-3 3-3"></path>
+          </svg>
+        </div>
+        <span class="sidebar-brand-name">EcoCycle<span style="color:#10B981;">AI</span></span>
+      </a>
+
+      <!-- 4 Core Navigation Items (Instant Tab Switcher) -->
+      <div class="sidebar-nav-section" style="margin-top: 14px;">
+        <a href="javascript:void(0)" onclick="switchAdminTab('dashboard')" class="sidebar-nav-item active" data-tab="dashboard">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          <span>Dashboard</span>
+        </a>
+
+        <a href="javascript:void(0)" onclick="switchAdminTab('disposal')" class="sidebar-nav-item" data-tab="disposal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18"></path>
+            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+          </svg>
+          <span>Disposal Centers</span>
+        </a>
+
+        <a href="javascript:void(0)" onclick="switchAdminTab('requests')" class="sidebar-nav-item" data-tab="requests">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          <span>Assigned Locations</span>
+          <span id="sidebarPendingBadge" class="notif-badge" style="display:none;">0</span>
+        </a>
+
+        <a href="javascript:void(0)" onclick="switchAdminTab('collection')" class="sidebar-nav-item" data-tab="collection">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="3" width="15" height="13"></rect>
+            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+            <circle cx="5.5" cy="18.5" r="2.5"></circle>
+            <circle cx="18.5" cy="18.5" r="2.5"></circle>
+          </svg>
+          <span>Collection Schedule</span>
+          {% if collection_stats and collection_stats.pending > 0 %}
+          <span class="notif-badge">{{ collection_stats.pending }}</span>
+          {% endif %}
+        </a>
+
+        <a href="javascript:void(0)" onclick="switchAdminTab('users')" class="sidebar-nav-item" data-tab="users">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          <span>Users</span>
+        </a>
+
+        <a href="javascript:void(0)" onclick="switchAdminTab('records')" class="sidebar-nav-item" data-tab="records">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="9" y1="21" x2="9" y2="9"></line>
+          </svg>
+          <span>Records</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Bottom Sidebar Profile Card -->
+    <div class="admin-sidebar-bottom">
+      <div class="sidebar-user-pill">
+        <div class="sidebar-user-avatar">A</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-username">{{ admin_user.username }}</div>
+          <div class="sidebar-userrole">System Administrator</div>
+        </div>
+        <a href="{{ url_for('admin_logout') }}" class="sidebar-logout-icon" title="Sign out of Admin">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="admin-main-viewport">
+    <!-- Top Bar -->
+    <header class="admin-viewport-topbar">
+      <div class="topbar-status-strip">
+        <span class="status-indicator-live">
+          <span class="status-dot"></span> System Live
+        </span>
+      </div>
+
+
+    </header>
+
+    <!-- Page Body -->
+    <div class="admin-viewport-content">
+      <!-- =================================================================== -->
+      <!-- TAB VIEW 1: DASHBOARD (Overview, KPIs, 3-Card Grid)                 -->
+      <!-- =================================================================== -->
+      <section id="view-dashboard" class="admin-tab-view">
+        <!-- Title & Subtitle -->
+        <div class="admin-page-hero">
+          <div style="flex:1;">
+            <h1 class="admin-hero-title">Enterprise Admin Intelligence Console</h1>
+            <p class="admin-hero-subtitle">Real-time classification telemetry, waste stream breakdown, user management, and record moderation.</p>
+          </div>
+          <div class="admin-hero-meta-card">
+            <div class="hero-meta-avatar">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+            </div>
+            <div>
+              <div style="font-weight:700; font-size:0.85rem; color:var(--text-primary);">{{ admin_user.username }}</div>
+              <div style="font-size:0.72rem; color:var(--brand-primary); font-weight:600;">System Administrator</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6 Live DB KPI Statistics Cards -->
+        <div class="admin-kpi-grid">
+          <!-- 1. Total Users -->
+          <div class="admin-kpi-card" onclick="switchAdminTab('users')" style="cursor:pointer;" title="View Users Directory">
+            <div class="admin-kpi-icon-box" style="background: rgba(37, 99, 235, 0.1); color: #2563EB;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </div>
+            <div class="admin-kpi-content">
+              <div class="admin-kpi-val" style="color: #2563EB;">{{ stats.total_users }}</div>
+              <div class="admin-kpi-label">Total Users</div>
+            </div>
+          </div>
+
+          <!-- 2. Images Classified -->
+          <div class="admin-kpi-card">
+            <div class="admin-kpi-icon-box" style="background: rgba(5, 150, 105, 0.1); color: var(--brand-primary);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+            </div>
+            <div class="admin-kpi-content">
+              <div class="admin-kpi-val" style="color: var(--brand-primary);">{{ stats.total_classified }}</div>
+              <div class="admin-kpi-label">Images Classified</div>
+            </div>
+          </div>
+
+          <!-- 3. Organic Waste Count -->
+          <div class="admin-kpi-card">
+            <div class="admin-kpi-icon-box" style="background: var(--organic-bg); color: var(--organic-color);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12A10 10 0 0 1 12 2Z"></path>
+                <path d="M12 2v20"></path>
+              </svg>
+            </div>
+            <div class="admin-kpi-content">
+              <div class="admin-kpi-val" style="color: var(--organic-color);">{{ stats.organic_count }}</div>
+              <div class="admin-kpi-label">Organic Waste Count</div>
+            </div>
+          </div>
+
+          <!-- 4. Recyclable Waste Count -->
+          <div class="admin-kpi-card">
+            <div class="admin-kpi-icon-box" style="background: var(--recyclable-bg); color: var(--recyclable-color);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5"></path>
+                <path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-2.003-3.468"></path>
+              </svg>
+            </div>
+            <div class="admin-kpi-content">
+              <div class="admin-kpi-val" style="color: var(--recyclable-color);">{{ stats.recyclable_count }}</div>
+              <div class="admin-kpi-label">Recyclable Waste Count</div>
+            </div>
+          </div>
+
+          <!-- 5. Hazardous Waste Count -->
+          <div class="admin-kpi-card">
+            <div class="admin-kpi-icon-box" style="background: var(--hazardous-bg); color: var(--hazardous-color);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+              </svg>
+            </div>
+            <div class="admin-kpi-content">
+              <div class="admin-kpi-val" style="color: var(--hazardous-color);">{{ stats.hazardous_count }}</div>
+              <div class="admin-kpi-label">Hazardous Waste Count</div>
+            </div>
+          </div>
+
+          <!-- 6. Not Waste Count -->
+          <div class="admin-kpi-card">
+            <div class="admin-kpi-icon-box" style="background: rgba(245, 158, 11, 0.1); color: var(--warning-color);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+              </svg>
+            </div>
+            <div class="admin-kpi-content">
+              <div class="admin-kpi-val" style="color: var(--warning-color);">{{ stats.not_waste_count }}</div>
+              <div class="admin-kpi-label">Not Waste (Intact/Living)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Overview Panel: Waste Stream Breakdown -->
+        <div class="admin-module-card" style="margin-top: 28px;">
+          <div class="admin-module-header">
+            <span class="admin-module-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                <polyline points="2 17 12 22 22 17"></polyline>
+                <polyline points="2 12 12 17 22 12"></polyline>
+              </svg>
+              Streams Overview
+            </span>
+          </div>
+
+          {% set total = stats.total_classified if stats.total_classified > 0 else 1 %}
+          {% set org_pct = ((stats.organic_count / total) * 100) | round(1) %}
+          {% set rec_pct = ((stats.recyclable_count / total) * 100) | round(1) %}
+          {% set haz_pct = ((stats.hazardous_count / total) * 100) | round(1) %}
+          {% set not_pct = ((stats.not_waste_count / total) * 100) | round(1) %}
+
+          <div class="admin-stream-bars" style="margin-top: 12px;">
+            <div class="stream-stat-item">
+              <div class="stream-stat-header">
+                <span class="stream-stat-name" style="color: var(--organic-color);">Organic Waste</span>
+                <span class="stream-stat-count">{{ stats.organic_count }} items ({{ org_pct }}%)</span>
+              </div>
+              <div class="stream-stat-track">
+                <div class="stream-stat-fill" style="background: var(--organic-color); width: {{ org_pct }}%;"></div>
+              </div>
+            </div>
+
+            <div class="stream-stat-item">
+              <div class="stream-stat-header">
+                <span class="stream-stat-name" style="color: var(--recyclable-color);">Recyclable Materials</span>
+                <span class="stream-stat-count">{{ stats.recyclable_count }} items ({{ rec_pct }}%)</span>
+              </div>
+              <div class="stream-stat-track">
+                <div class="stream-stat-fill" style="background: var(--recyclable-color); width: {{ rec_pct }}%;"></div>
+              </div>
+            </div>
+
+            <div class="stream-stat-item">
+              <div class="stream-stat-header">
+                <span class="stream-stat-name" style="color: var(--hazardous-color);">Hazardous Waste</span>
+                <span class="stream-stat-count">{{ stats.hazardous_count }} items ({{ haz_pct }}%)</span>
+              </div>
+              <div class="stream-stat-track">
+                <div class="stream-stat-fill" style="background: var(--hazardous-color); width: {{ haz_pct }}%;"></div>
+              </div>
+            </div>
+
+            <div class="stream-stat-item">
+              <div class="stream-stat-header">
+                <span class="stream-stat-name" style="color: var(--warning-color);">Not Discarded / Living</span>
+                <span class="stream-stat-count">{{ stats.not_waste_count }} items ({{ not_pct }}%)</span>
+              </div>
+              <div class="stream-stat-track">
+                <div class="stream-stat-fill" style="background: var(--warning-color); width: {{ not_pct }}%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB VIEW 2: DISPOSAL (Disposal Facilities Directory & Management)  -->
+      <!-- =================================================================== -->
+      <section id="view-disposal" class="admin-tab-view" style="display:none;">
+        <div class="admin-page-hero">
+          <div style="flex:1;">
+            <h1 class="admin-hero-title">Certified Disposal &amp; Material Recovery Centers</h1>
+            <p class="admin-hero-subtitle">Directory of verified municipal recycling plants, organic composting facilities, and hazardous safe-handling vaults.</p>
+          </div>
+          <div>
+            <button type="button" class="btn btn-primary btn-sm" onclick="openAddLocationModal()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <span>Add New Disposal Facility</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Search and Filter bar for disposal locations -->
+        <div style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+          <div style="display:flex; gap:10px; flex:1; max-width:480px;">
+            <div style="position:relative; flex:1;">
+              <input type="text" id="disposalSearchInput" placeholder="Search by name, city, address, or category..." 
+                     oninput="filterDisposalLocations()"
+                     style="width:100%; padding:9px 12px 9px 34px; background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:8px; font-size:0.85rem; color:var(--text-primary); outline:none;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute; left:11px; top:50%; transform:translateY(-50%); pointer-events:none;">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </div>
+            <select id="disposalCityFilter" onchange="filterDisposalLocations()"
+                    style="padding:9px 12px; background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:8px; font-size:0.85rem; color:var(--text-primary); outline:none;">
+              <option value="all">All Cities</option>
+              <option value="Bengaluru">Bengaluru</option>
+              <option value="Mysuru">Mysuru</option>
+              <option value="Mangaluru">Mangaluru</option>
+              <option value="Hubballi-Dharwad">Hubballi-Dharwad</option>
+              <option value="Belagavi">Belagavi</option>
+              <option value="Bagalkot">Bagalkot</option>
+              <option value="Shivamogga">Shivamogga</option>
+            </select>
+          </div>
+          <div style="font-size:0.82rem; color:var(--text-muted);">
+            Total Facilities: <strong style="color:var(--text-primary);" id="disposalTotalCount">{{ locations_list|length }}</strong>
+          </div>
+        </div>
+
+        <div class="admin-section-card" style="padding: 0; overflow: hidden; margin-bottom: 30px; border-radius: 12px;">
+          <div class="admin-table-wrapper">
+            <table class="admin-data-table" id="disposalLocationsTable" style="width: 100%; table-layout: auto;">
+              <thead>
+                <tr>
+                  <th style="width: 75px; padding-left: 16px;">Facility ID</th>
+                  <th style="min-width: 150px;">Facility Name</th>
+                  <th style="width: 105px;">City</th>
+                  <th style="width: 115px;">Stream</th>
+                  <th style="width: 140px;">Timings</th>
+                  <th style="width: 125px;">Contact Phone</th>
+                  <th style="width: 105px; text-align: right; padding-right: 16px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if locations_list and locations_list|length > 0 %}
+                  {% for loc in locations_list %}
+                    <tr class="disposal-loc-row" data-city="{{ loc.city }}" data-name="{{ loc.name|lower }}" data-cat="{{ loc.category|lower }}" data-addr="{{ loc.address|lower }}">
+                      <td style="padding-left: 16px; font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); white-space: nowrap;">#LOC-{{ loc.id }}</td>
+                      <td style="font-weight: 700; font-size: 0.84rem; color: var(--text-primary);">{{ loc.name }}</td>
+                      <td style="font-size: 0.82rem; color: var(--text-secondary); white-space: nowrap;">
+                        {{ loc.city or '—' }}
+                      </td>
+                      <td>
+                        {% if 'Hazard' in loc.category %}
+                          <span class="badge badge-hazardous" style="font-size:0.7rem; padding:2px 6px;">Hazardous</span>
+                        {% elif 'Organic' in loc.category %}
+                          <span class="badge badge-organic" style="font-size:0.7rem; padding:2px 6px;">Organic</span>
+                        {% elif 'Recycl' in loc.category %}
+                          <span class="badge badge-recyclable" style="font-size:0.7rem; padding:2px 6px;">Recyclable</span>
+                        {% else %}
+                          <span class="badge" style="background: rgba(37,99,235,0.1); color: #2563EB; border:1px solid rgba(37,99,235,0.2); font-size:0.7rem; padding:2px 6px;">Universal</span>
+                        {% endif %}
+                      </td>
+                      <td style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.25;">{{ loc.operating_hours or 'Mon-Fri 08:00-17:00' }}</td>
+                      <td style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--brand-primary); white-space: nowrap;">{{ loc.phone or 'N/A' }}</td>
+                      <td style="text-align: right; white-space: nowrap; padding-right: 16px;">
+                        <button type="button" class="btn btn-secondary btn-sm" style="padding: 3px 6px; font-size: 0.72rem; margin-right: 3px;"
+                                onclick='openEditLocationModal({{ loc.id }}, {{ loc.name|tojson }}, {{ loc.category|tojson }}, {{ (loc.city or "Bengaluru")|tojson }}, {{ loc.address|tojson }}, {{ loc.latitude }}, {{ loc.longitude }}, {{ (loc.operating_hours or "")|tojson }}, {{ (loc.phone or "")|tojson }})'
+                                title="Edit Facility">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                          </svg>
+                        </button>
+                        <form action="{{ url_for('admin_delete_location', loc_id=loc.id) }}" method="POST" onsubmit="return confirm('Delete disposal facility \'{{ loc.name }}\'?');" style="display:inline;">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                          <button type="submit" class="btn-table-action" style="color:var(--hazardous-color); padding:3px 5px; border-radius:6px; border:1px solid rgba(239,68,68,0.2); background:transparent; font-size:0.72rem; cursor:pointer;" title="Delete Facility">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;">
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr class="no-paginate-row">
+                    <td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">No locations registered.</td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+          <div id="disposalPagination" class="admin-pagination-container"></div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB VIEW 3: REQUESTS (Disposal Requests Moderation & Assignment)     -->
+      <!-- =================================================================== -->
+      <section id="view-requests" class="admin-tab-view" style="display:none;">
+        <div class="admin-page-hero">
+          <div style="flex:1;">
+            <h1 class="admin-hero-title">Auto-Assign of Nearest Disposal Center</h1>
+            <p class="admin-hero-subtitle">Review incoming user waste requests — inspect the scanned image, GPS location, and the facility the system automatically selected — then verify.</p>
+          </div>
+        </div>
+
+        {% if disposal_stats.total_locations == 0 %}
+        <div style="display:flex; align-items:flex-start; gap:12px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 14px 16px; margin-bottom: 20px;">
+          <span style="font-size:1.2rem; line-height:1;"><i class="bi bi-exclamation-triangle-fill text-danger"></i></span>
+          <div style="flex:1;">
+            <div style="font-weight:700; color: var(--hazardous-color);">Auto-assign is currently broken: 0 disposal locations on file</div>
+            <div style="font-size:0.85rem; color: var(--text-secondary); margin-top:4px;">
+              New disposal requests can't be auto-assigned to a nearest center because none exist yet. They'll stay stuck on "Pending" until you add at least one location.
+            </div>
+          </div>
+          <a href="{{ url_for('admin_locations') }}" class="btn btn-primary btn-sm" style="flex-shrink:0; background: var(--hazardous-color); white-space:nowrap;">Add a Location</a>
+        </div>
+        {% endif %}
+
+        <!-- Requests Table -->
+        <div class="admin-section-card" style="padding: 0; overflow: hidden; margin-bottom: 30px; border-radius: 12px;">
+          <div class="admin-table-wrapper">
+            <table class="admin-data-table" id="assignedLocationsTable" style="width: 100%; table-layout: auto;">
+              <thead>
+                <tr>
+                  <th style="width: 90px; padding-left: 18px;">Req ID</th>
+                  <th style="min-width: 130px;">User</th>
+                  <th style="width: 160px;">Date / Time</th>
+                  <th style="width: 150px;">Request Status</th>
+                  <th style="min-width: 200px;">Assigned Facility</th>
+                  <th style="width: 130px; text-align: right; padding-right: 18px;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if requests_list and requests_list|length > 0 %}
+                  {% for req in requests_list %}
+                    <tr class="request-row">
+                      <td style="padding-left: 18px; font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-muted); white-space: nowrap;">#REQ-{{ req.id }}</td>
+                      <td>
+                        <div style="font-weight: 700; color: var(--text-primary);">{{ req.user_name }}</div>
+                      </td>
+                      <td style="font-size: 0.78rem; color: var(--text-muted); font-family: var(--font-mono); white-space: nowrap;">
+                        {{ req.created_at }}
+                      </td>
+                      <td>
+                        {% if req.status == 'Pending' %}
+                          <span style="font-weight: 600; font-size: 0.85rem; color: #D97706; white-space: nowrap;">Pending</span>
+                        {% elif req.status == 'Reviewed' %}
+                          <span style="font-weight: 600; font-size: 0.85rem; color: #2563EB; white-space: nowrap;">Reviewed</span>
+                        {% elif req.status == 'Location Assigned' %}
+                          <span style="font-weight: 600; font-size: 0.85rem; color: #059669; white-space: nowrap;">Location Assigned</span>
+                        {% elif req.status == 'Completed' %}
+                          <span style="font-weight: 600; font-size: 0.85rem; color: #10B981; white-space: nowrap;">Completed</span>
+                        {% else %}
+                          <span style="font-weight: 600; font-size: 0.85rem; color: #059669; white-space: nowrap;">{{ req.status }}</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if req.location_name %}
+                          <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-primary);">{{ req.location_name }}</div>
+                          <div style="font-size: 0.75rem; color: var(--text-muted); text-overflow: ellipsis; white-space: nowrap; max-width: 240px; overflow: hidden;" title="{{ req.location_address }}">{{ req.location_address }}</div>
+                        {% else %}
+                          <span style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">Not assigned yet</span>
+                        {% endif %}
+                      </td>
+                      <td style="text-align: right; white-space: nowrap; padding-right: 18px;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="openReviewModal({{ req.id }})" style="padding: 4px 8px; font-size: 0.76rem;">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                          </svg>
+                          <span>View</span>
+                        </button>
+                        <form id="deleteReqForm{{ req.id }}" action="{{ url_for('admin_delete_request', request_id=req.id) }}" method="POST" style="display: inline-block; margin-left: 4px;">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                          <button type="button" class="btn btn-ghost btn-sm" style="color: var(--hazardous-color); padding: 4px 6px;" title="Delete Request" onclick="confirmAdminAction('deleteReqForm{{ req.id }}', 'Delete this disposal request?', 'Request #REQ-{{ req.id }} will be permanently removed. This action cannot be undone.')">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr class="no-paginate-row">
+                    <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                      No disposal requests found.
+                    </td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+          <div id="assignedLocationsPagination" class="admin-pagination-container"></div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB VIEW: WASTE COLLECTION (PICKUP) REQUESTS                        -->
+      <!-- =================================================================== -->
+      <section id="view-collection" class="admin-tab-view" style="display:none;">
+        <div class="admin-page-hero">
+          <div style="flex:1;">
+            <h1 class="admin-hero-title">Collection Details</h1>
+            <p class="admin-hero-subtitle">Review incoming pickup requests, accept or reject them.</p>
+          </div>
+        </div>
+
+        <!-- Area-Based Waste Collection Schedule -->
+        <div class="admin-section-card" style="margin-bottom: 24px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding: 18px 20px 4px;">
+            <div>
+              <h2 style="font-size: 1.05rem; font-weight: 800; color: var(--text-primary); margin: 0;">Collection Schedule</h2>
+              <p style="font-size: 0.82rem; color: var(--text-muted); margin: 4px 0 0;">Set the pickup day &amp; time for each area. Users only see areas that have an active schedule here.</p>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" style="background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);" onclick="openScheduleModal()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>Add Area Schedule</span>
+            </button>
+          </div>
+
+          <div class="admin-table-wrapper">
+            <table class="admin-data-table" id="collectionSchedulesTable">
+              <thead>
+                <tr>
+                  <th>Area</th>
+                  <th>PIN Code</th>
+                  <th>Collector / Team</th>
+                  <th>Collection Day</th>
+                  <th>Time Window</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if collection_schedules_list and collection_schedules_list|length > 0 %}
+                  {% for sched in collection_schedules_list %}
+                    <tr id="scheduleRow{{ sched.id }}" class="schedule-row">
+                      <td style="font-weight: 700; color: var(--text-primary);"><i class="bi bi-geo-alt-fill me-1" style="color:var(--brand-primary); font-size:0.85rem;"></i>{{ sched.area }}</td>
+                      <td style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-secondary);">{{ sched.pincode or 'All PINs' }}</td>
+                      <td style="font-weight: 600; color: #2563EB;">{{ sched.collector_name or 'EcoCycle Municipal Collector' }}</td>
+                      <td style="color: var(--text-secondary);">{{ sched.day_of_week }}</td>
+                      <td style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-secondary);">{{ sched.time_start }} – {{ sched.time_end }}</td>
+                      <td>
+                        {% if sched.active %}
+                          <span class="badge badge-organic" style="font-weight: 700;"><span class="status-dot" style="background:#10B981;"></span> Active</span>
+                        {% else %}
+                          <span class="badge badge-hazardous" style="font-weight: 700;"><span class="status-dot" style="background:var(--hazardous-color);"></span> Disabled</span>
+                        {% endif %}
+                      </td>
+                      <td style="text-align: right; white-space: nowrap;">
+                        <button type="button" class="btn btn-ghost btn-sm" style="padding: 4px 8px; font-size:0.78rem;"
+                                onclick='openScheduleModal({{ sched.id }}, {{ sched.area|tojson }}, {{ (sched.pincode or "")|tojson }}, {{ (sched.collector_name or "")|tojson }}, {{ sched.day_of_week|tojson }}, {{ sched.time_start|tojson }}, {{ sched.time_end|tojson }}, {{ sched.active|int }})'>
+                          Edit
+                        </button>
+                        <form id="toggleSchedForm{{ sched.id }}" action="{{ url_for('admin_toggle_collection_schedule', schedule_id=sched.id) }}" method="POST" style="display:inline-block; margin-left:2px;">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                          <button type="button" class="btn btn-ghost btn-sm" style="padding: 4px 8px; font-size:0.78rem;" onclick="document.getElementById('toggleSchedForm{{ sched.id }}').submit()">
+                            {{ 'Disable' if sched.active else 'Enable' }}
+                          </button>
+                        </form>
+                        <form id="deleteSchedForm{{ sched.id }}" action="{{ url_for('admin_delete_collection_schedule', schedule_id=sched.id) }}" method="POST" style="display: inline-block; margin-left:2px;">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                          <button type="button" class="btn btn-ghost btn-sm" style="color: var(--hazardous-color); padding: 4px 6px;" title="Delete Schedule" onclick="confirmAdminAction('deleteSchedForm{{ sched.id }}', 'Delete this area schedule?', 'Pickup schedule for {{ sched.area }} will be permanently removed. Users in this area will no longer be able to request collection.', 'Delete')">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr class="no-paginate-row">
+                    <td colspan="7" style="text-align: center; padding: 32px; color: var(--text-muted);">
+                      No area schedules yet. Add one so users in that area can request a pickup.
+                    </td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+          <div id="collectionPagination" class="admin-pagination-container"></div>
+        </div>
+
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB VIEW 4: USERS (Registered Users Directory)                      -->
+      <!-- =================================================================== -->
+      <section id="view-users" class="admin-tab-view" style="display:none;">
+        <div class="admin-page-hero">
+          <div style="flex:1;">
+            <h1 class="admin-hero-title">Registered Users &amp; Access Directory</h1>
+            <p class="admin-hero-subtitle">User accounts with active access to the EcoCycle platform, roles, and inference scan volume.</p>
+          </div>
+        </div>
+
+        <div class="admin-section-card" style="padding: 0; overflow: hidden; margin-bottom: 30px; border-radius: 12px;">
+          <div class="admin-table-wrapper">
+            <table class="admin-data-table" id="usersTable">
+              <thead>
+                <tr>
+                  <th>User ID</th>
+                  <th>Username</th>
+                  <th>Email Address</th>
+                  <th>Account Role</th>
+                  <th>Total Inferences</th>
+                  <th>Member Since</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if users and users|length > 0 %}
+                  {% for u in users %}
+                    {% if u.role != 'admin' and u.username != 'admin' %}
+                    <tr class="user-row">
+                      <td style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-muted);">#{{ u.id }}</td>
+                      <td style="font-weight: 700; color: var(--text-primary);">{{ u.username }}</td>
+                      <td style="color: var(--text-secondary); font-size: 0.85rem;">{{ u.email }}</td>
+                      <td>
+                        {% if u.role == 'admin' %}
+                          <span class="badge badge-primary">Administrator</span>
+                        {% else %}
+                          <span class="badge" style="background: var(--bg-surface-subtle); color: var(--text-secondary); border: 1px solid var(--border-subtle);">User</span>
+                        {% endif %}
+                      </td>
+                      <td style="font-family: var(--font-mono); font-weight: 600; font-size: 0.85rem;">
+                        {{ u.classification_count }} scans
+                      </td>
+                      <td style="font-size: 0.78rem; color: var(--text-muted); font-family: var(--font-mono);">
+                        {{ u.created_at }}
+                      </td>
+                    </tr>
+                    {% endif %}
+                  {% endfor %}
+                {% else %}
+                  <tr class="no-paginate-row">
+                    <td colspan="6" style="text-align: center; padding: 30px; color: var(--text-muted);">
+                      No users found.
+                    </td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+          <div id="usersPagination" class="admin-pagination-container"></div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- TAB VIEW 5: RECORDS (Complete Optical Classification Telemetry)     -->
+      <!-- =================================================================== -->
+      <section id="view-records" class="admin-tab-view" style="display:none;">
+        <div class="admin-page-hero">
+          <div style="flex:1;">
+            <h1 class="admin-hero-title">Classification Records</h1>
+            <p class="admin-hero-subtitle">Search, audit, and moderate live optical classification telemetry logs saved in the database.</p>
+          </div>
+        </div>
+
+        <!-- Full Telemetry Records Detailed Section -->
+        <div class="admin-section-card" style="margin-bottom: 40px;">
+          <div class="admin-card-header" style="flex-wrap: wrap; gap: 14px;">
+            <div>
+              <span class="admin-card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="3" y1="9" x2="21" y2="9"></line>
+                  <line x1="9" y1="21" x2="9" y2="9"></line>
+                </svg>
+                Complete Optical Classification Telemetry Logs
+              </span>
+              <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Search, audit, and moderate live classification logs saved in the database.</div>
+            </div>
+
+            <!-- Search and Filter Form -->
+            <form action="{{ url_for('admin_dashboard') }}#records" method="GET" class="admin-filter-bar">
+              <div class="admin-filter-search">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" name="search" value="{{ search_query }}" placeholder="Search specimen object..." class="admin-search-input">
+              </div>
+
+              <select name="category" class="admin-select-input" onchange="this.form.submit()">
+                <option value="all" {% if category_filter == 'all' or not category_filter %}selected{% endif %}>All Categories</option>
+                <option value="Hazardous" {% if category_filter == 'Hazardous' %}selected{% endif %}>Hazardous</option>
+                <option value="Organic" {% if category_filter == 'Organic' %}selected{% endif %}>Organic</option>
+                <option value="Recyclable" {% if category_filter == 'Recyclable' %}selected{% endif %}>Recyclable</option>
+              </select>
+
+              <select name="waste_status" class="admin-select-input" onchange="this.form.submit()">
+                <option value="all" {% if waste_filter == 'all' or not waste_filter %}selected{% endif %}>All Statuses</option>
+                <option value="waste" {% if waste_filter == 'waste' %}selected{% endif %}>Waste Only</option>
+                <option value="not_waste" {% if waste_filter == 'not_waste' %}selected{% endif %}>Non-Waste Only</option>
+              </select>
+
+              <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+              {% if search_query or (category_filter and category_filter != 'all') or (waste_filter and waste_filter != 'all') %}
+                <a href="{{ url_for('admin_dashboard') }}#records" class="btn btn-ghost btn-sm" style="color: var(--text-muted);">Reset</a>
+              {% endif %}
+            </form>
+          </div>
+
+          <div class="admin-table-wrapper">
+            <table class="admin-data-table" id="recordsTable">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Specimen / Image</th>
+                  <th>Object Identified</th>
+                  <th>Condition</th>
+                  <th>Category Stream</th>
+                  <th>Waste Status</th>
+                  <th>Confidence</th>
+                  <th>Logged At</th>
+                  <th style="text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if classifications and classifications|length > 0 %}
+                  {% for item in classifications %}
+                    <tr class="record-row">
+                      <td style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-muted);">#{{ item.id }}</td>
+                      <td>
+                        <div class="table-img-cell">
+                          <div class="table-img-thumb">
+                            {% if item.image_filename %}
+                              <img src="/static/uploads/{{ item.image_filename }}" alt="{{ item.object_name }}" loading="lazy"
+                                   onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            {% endif %}
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="{{ 'display:none;' if item.image_filename else '' }}">
+                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                              <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                          </div>
+                          <span class="table-img-name" title="{{ item.image_filename }}">{{ item.image_filename }}</span>
+                        </div>
+                      </td>
+                      <td style="font-weight: 700; color: var(--text-primary);">{{ item.object_name }}</td>
+                      <td style="color: var(--text-secondary); font-size: 0.85rem;">{{ item.condition }}</td>
+                      <td>
+                        {% if 'Hazardous' in item.category %}
+                          <span class="badge badge-hazardous">Hazardous</span>
+                        {% elif 'Organic' in item.category %}
+                          <span class="badge badge-organic">Organic</span>
+                        {% elif 'Recyclable' in item.category %}
+                          <span class="badge badge-recyclable">Recyclable</span>
+                        {% else %}
+                          <span class="badge" style="background: var(--bg-surface-subtle); color: var(--text-primary); border: 1px solid var(--border-subtle);">{{ item.category }}</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if item.is_waste %}
+                          <span style="display:inline-flex; align-items:center; gap:5px; font-weight:700; font-size:0.8rem; color: var(--hazardous-color);">
+                            <span style="width:6px; height:6px; background:var(--hazardous-color); border-radius:999px;"></span>
+                            YES
+                          </span>
+                        {% else %}
+                          <span style="display:inline-flex; align-items:center; gap:5px; font-weight:700; font-size:0.8rem; color: var(--organic-color);">
+                            <span style="width:6px; height:6px; background:var(--organic-color); border-radius:999px;"></span>
+                            NO (Intact)
+                          </span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        <span style="font-family: var(--font-mono); font-weight: 700; font-size: 0.85rem; color: var(--brand-primary);">
+                          {{ item.confidence }}%
+                        </span>
+                      </td>
+                      <td style="font-size: 0.78rem; color: var(--text-muted); font-family: var(--font-mono); white-space: nowrap;">
+                        {{ item.timestamp }}
+                      </td>
+                      <td style="text-align: right;">
+                        <form id="deleteClsForm{{ item.id }}" action="{{ url_for('admin_delete_classification', record_id=item.id) }}" method="POST" style="display: inline;">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                          <button type="button" class="btn btn-ghost btn-sm" style="color: var(--hazardous-color); padding: 4px 8px;" title="Delete Record" onclick="confirmAdminAction('deleteClsForm{{ item.id }}', 'Delete this classification record?', 'Record #{{ item.id }} will be permanently removed. This action cannot be undone.')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                              <line x1="10" y1="11" x2="10" y2="17"></line>
+                              <line x1="14" y1="11" x2="14" y2="17"></line>
+                            </svg>
+                            <span>Delete</span>
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr class="no-paginate-row">
+                    <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                      No classification records found.
+                    </td>
+                  </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+          <div id="recordsPagination" class="admin-pagination-container"></div>
+        </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: Pickup Location Preview (map, place name, coords, directions) -->
+<!-- ========================================================================= -->
+<div id="pickupMapModalOverlay" class="custom-modal-overlay" style="display:none;">
+  <div class="custom-modal-dialog" style="max-width: 480px;">
+    <div class="custom-modal-header">
+      <div>
+        <h3 class="custom-modal-title" style="display:flex; align-items:center; gap:6px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+          Pickup Location
+        </h3>
+        <p class="custom-modal-subtitle" id="pickupMapReqLabel">Request</p>
+      </div>
+      <button type="button" class="btn-close-modal" onclick="closePickupMapModal()">&times;</button>
+    </div>
+
+    <div class="custom-modal-body">
+      <div id="pickupMapPreview" style="width:100%; height:260px; border-radius:8px; border:1px solid var(--border-subtle); background:#e2e8f0;"></div>
+
+      <div style="margin-top:14px;">
+        <div style="font-weight:700; font-size:1rem; color:var(--text-primary);" id="pickupMapPlaceName">Pickup Location</div>
+        <div style="font-size:0.78rem; color:var(--text-muted); font-family:var(--font-mono); margin-top:4px;">
+          Latitude: <span id="pickupMapLat">0.0</span> &bull; Longitude: <span id="pickupMapLng">0.0</span>
+        </div>
+      </div>
+
+      <div style="margin-top:18px;">
+        <a id="pickupMapDirectionsLink" href="#" target="_blank" rel="noopener" class="btn btn-primary btn-md" style="width:100%; justify-content:center; background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+          </svg>
+          <span>Open Directions</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Generic Yes/No Confirmation (delete, reject, mark-as-collected) -->
+<!-- ========================================================================= -->
+<div id="adminConfirmOverlay" class="custom-modal-overlay delete-confirm-overlay" style="display:none;">
+  <div class="custom-modal-dialog delete-confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="adminConfirmTitle">
+    <div class="delete-confirm-body">
+      <div class="delete-confirm-icon" id="adminConfirmIcon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          <line x1="10" y1="11" x2="10" y2="17"></line>
+          <line x1="14" y1="11" x2="14" y2="17"></line>
+        </svg>
+      </div>
+      <h3 class="delete-confirm-title" id="adminConfirmTitle">Are you sure?</h3>
+      <p class="delete-confirm-desc" id="adminConfirmDesc">This action cannot be undone.</p>
+    </div>
+    <div class="delete-confirm-actions">
+      <button type="button" class="btn-delete-cancel" id="adminConfirmNoBtn" onclick="closeAdminConfirm()">No</button>
+      <button type="button" class="btn-delete-confirm" id="adminConfirmYesBtn" onclick="runAdminConfirm()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span id="adminConfirmYesLabel">Yes</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add / Edit Area Collection Schedule -->
+<!-- ========================================================================= -->
+<div id="scheduleModalOverlay" class="custom-modal-overlay" style="display:none;">
+  <div class="custom-modal-dialog" style="max-width: 480px;">
+    <div class="custom-modal-header">
+      <div>
+        <h3 class="custom-modal-title" id="scheduleModalTitle"><i class="bi bi-calendar-event me-2" style="color:var(--brand-primary);"></i>Add Area Schedule</h3>
+        <p class="custom-modal-subtitle">Users in this area will see this pickup day &amp; time automatically.</p>
+      </div>
+      <button type="button" class="btn-close-modal" onclick="closeScheduleModal()">&times;</button>
+    </div>
+
+    <div class="custom-modal-body">
+      <form id="scheduleForm" method="POST" action="{{ url_for('admin_add_collection_schedule') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+          <div>
+            <label style="font-size:0.85rem; font-weight:700; color:var(--text-primary); margin-bottom:6px; display:block;">Area / Locality *</label>
+            <input type="text" name="area" id="scheduleAreaInput" class="admin-search-input" style="width:100%;" placeholder="e.g. Kotekar or Indiranagar" required>
+          </div>
+          <div>
+            <label style="font-size:0.85rem; font-weight:700; color:var(--text-primary); margin-bottom:6px; display:block;">PIN Code (Optional)</label>
+            <input type="text" name="pincode" id="schedulePincodeInput" class="admin-search-input" style="width:100%;" placeholder="e.g. 575025">
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <label style="font-size:0.85rem; font-weight:700; color:var(--text-primary); margin-bottom:6px; display:block;">Assigned Collector / Team Name</label>
+          <input type="text" name="collector_name" id="scheduleCollectorInput" class="admin-search-input" style="width:100%;" placeholder="e.g. EcoCycle Coastal Fleet Alpha" value="EcoCycle Municipal Collector">
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <label style="font-size:0.85rem; font-weight:700; color:var(--text-primary); margin-bottom:6px; display:block;">Collection Day *</label>
+          <select name="day_of_week" id="scheduleDayInput" class="admin-search-input" style="width:100%;" required>
+            {% for day in weekdays %}
+              <option value="{{ day }}">{{ day }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+          <div>
+            <label style="font-size:0.85rem; font-weight:700; color:var(--text-primary); margin-bottom:6px; display:block;">Start Time</label>
+            <input type="time" name="time_start" id="scheduleStartInput" class="admin-search-input" style="width:100%;" value="09:00" required>
+          </div>
+          <div>
+            <label style="font-size:0.85rem; font-weight:700; color:var(--text-primary); margin-bottom:6px; display:block;">End Time</label>
+            <input type="time" name="time_end" id="scheduleEndInput" class="admin-search-input" style="width:100%;" value="13:00" required>
+          </div>
+        </div>
+
+        <div style="margin-bottom:20px; display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" name="active" id="scheduleActiveInput" checked style="width:16px; height:16px;">
+          <label for="scheduleActiveInput" style="font-size:0.85rem; font-weight:600; color:var(--text-primary);">Active (visible to users)</label>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="closeScheduleModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm" style="background:linear-gradient(135deg,#2563EB 0%,#1D4ED8 100%);" id="scheduleSubmitBtn">
+            Add Schedule
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Review & Verify Request -->
+<!-- ========================================================================= -->
+<div id="assignModalOverlay" class="custom-modal-overlay" style="display:none;">
+  <div class="custom-modal-dialog" style="max-width: 780px;">
+    <div class="custom-modal-header">
+      <div>
+        <h3 class="custom-modal-title" id="modalTitle">Review Disposal Request</h3>
+        <p class="custom-modal-subtitle" id="modalSubtitle">Inspect the scan, location, and auto-selected facility</p>
+      </div>
+      <button type="button" class="btn-close-modal" onclick="closeAssignModal()">&times;</button>
+    </div>
+
+    <div class="custom-modal-body">
+      <div style="display:grid; grid-template-columns: 140px 1fr; gap:16px; margin-bottom:16px;">
+        <div id="modalWasteImageWrap" style="width:140px; height:140px; border-radius:8px; overflow:hidden; border:1px solid var(--border-subtle); background:var(--bg-surface-subtle); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <img id="modalWasteImage" src="" alt="Waste specimen" style="width:100%; height:100%; object-fit:cover; display:none;">
+          <span id="modalWasteImageFallback" style="font-size:2rem;"><i class="bi bi-box-seam" style="color:var(--text-muted);"></i></span>
+        </div>
+
+        <div class="modal-req-summary" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:12px; background:var(--bg-surface-subtle); padding:14px; border-radius:8px; border:1px solid var(--border-subtle);">
+          <div>
+            <span style="font-size:0.72rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">User Name</span>
+            <div id="modalUserName" style="font-weight:700; color:var(--text-primary);">User</div>
+          </div>
+          <div>
+            <span style="font-size:0.72rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Object Detected</span>
+            <div id="modalObjectName" style="font-weight:700; color:var(--brand-primary);">Specimen</div>
+          </div>
+          <div>
+            <span style="font-size:0.72rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Waste Category</span>
+            <div id="modalCategory" style="font-weight:700;">Hazardous</div>
+          </div>
+          <div>
+            <span style="font-size:0.72rem; text-transform:uppercase; color:var(--text-muted); font-weight:700;">User GPS Coords</span>
+            <div id="modalCoords" style="font-family:var(--font-mono); font-size:0.8rem;">0.0, 0.0</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:18px;">
+        <label style="font-size:0.82rem; font-weight:700; color:var(--text-secondary); margin-bottom:6px; display:block;">
+          User Location &amp; Auto-Selected Facility
+        </label>
+        <div id="adminModalMap" style="width:100%; height:260px; border-radius:8px; border:1px solid var(--border-subtle); background:#e2e8f0;"></div>
+      </div>
+
+      <div style="margin-bottom:18px;">
+        <label style="font-size:0.82rem; font-weight:700; color:var(--text-secondary); margin-bottom:6px; display:block;">
+          System-Assigned Disposal Facility
+        </label>
+        <div id="modalFacilityCard" style="font-size:0.85rem; color:var(--text-secondary); background:rgba(16,185,129,0.06); padding:12px 14px; border-radius:6px; border-left:3px solid var(--brand-primary);">
+          No facility available yet.
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px;" id="modalAdminNotesWrap">
+        <label style="font-size:0.85rem; font-weight:700; color:var(--text-primary); margin-bottom:6px; display:block;">
+          System / Admin Notes
+        </label>
+        <div id="modalAdminNotesText" style="font-size:0.82rem; color:var(--text-muted); background:var(--bg-surface-subtle); padding:10px 12px; border-radius:6px; min-height:20px;">—</div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; align-items:center; gap:10px;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeAssignModal()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: Add / Edit Disposal Location -->
+<!-- ========================================================================= -->
+<div id="addLocModalOverlay" class="custom-modal-overlay" style="display:none;">
+  <div class="custom-modal-dialog" style="max-width: 600px;">
+    <div class="custom-modal-header">
+      <div>
+        <h3 class="custom-modal-title" id="locModalTitle">Register New Disposal Facility</h3>
+        <p class="custom-modal-subtitle" id="locModalSubtitle">Add a certified recycling depot or containment center to the directory.</p>
+      </div>
+      <button type="button" class="btn-close-modal" onclick="closeAddLocationModal()">&times;</button>
+    </div>
+
+    <form id="locModalForm" action="{{ url_for('admin_add_location') }}" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="custom-modal-body">
+        <div style="margin-bottom:14px;">
+          <label style="font-size:0.82rem; font-weight:700; color:var(--text-primary); display:block; margin-bottom:4px;">Facility Name *</label>
+          <input type="text" name="name" id="locNameInput" required class="admin-search-input" style="width:100%;" placeholder="e.g. North Side Battery &amp; E-Waste Hub">
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
+          <div>
+            <label style="font-size:0.82rem; font-weight:700; color:var(--text-primary); display:block; margin-bottom:4px;">Category *</label>
+            <select name="category" id="locCategoryInput" class="admin-select-input" style="width:100%;">
+              <option value="Recyclable">Recyclable Stream</option>
+              <option value="Organic">Organic Composting</option>
+              <option value="Hazardous">Hazardous &amp; E-Waste</option>
+              <option value="Universal">Universal Multi-Stream</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:0.82rem; font-weight:700; color:var(--text-primary); display:block; margin-bottom:4px;">City / Region</label>
+            <input type="text" name="city" id="locCityInput" value="Bengaluru" class="admin-search-input" style="width:100%;">
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="font-size:0.82rem; font-weight:700; color:var(--text-primary); display:block; margin-bottom:4px;">Address *</label>
+          <input type="text" name="address" id="locAddressInput" required class="admin-search-input" style="width:100%;" placeholder="e.g. 789 Green Tech Blvd">
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
+          <div>
+            <label style="font-size:0.82rem; font-weight:700; color:var(--text-primary); display:block; margin-bottom:4px;">Latitude (GPS) *</label>
+            <input type="number" step="any" name="latitude" id="locLatInput" required class="admin-search-input" style="width:100%;" placeholder="12.9716">
+          </div>
+          <div>
+            <label style="font-size:0.82rem; font-weight:700; color:var(--text-primary); display:block; margin-bottom:4px;">Longitude (GPS) *</label>
+            <input type="number" step="any" name="longitude" id="locLngInput" required class="admin-search-input" style="width:100%;" placeholder="77.5946">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:20px;">
+          <div>
+            <label style="font-size:0.82rem; font-weight:700; color:var(--text-primary); display:block; margin-bottom:4px;">Operating Timings / Hours</label>
+            <input type="text" name="operating_hours" id="locHoursInput" value="Mon-Sat: 08:00 - 18:00" class="admin-search-input" style="width:100%;" placeholder="e.g. Mon-Sat: 08:00 - 18:00">
+          </div>
+          <div>
+            <label style="font-size:0.82rem; font-weight:700; color:var(--text-primary); display:block; margin-bottom:4px;">Contact Phone</label>
+            <input type="text" name="phone" id="locPhoneInput" value="+91 98765 43210" class="admin-search-input" style="width:100%;">
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="closeAddLocationModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm" id="locSubmitBtn">Register Center</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Dynamic Tab Switching Logic (No Scroll-Down)
+  function switchAdminTab(tabName) {
+    const validTabs = ['dashboard', 'disposal', 'requests', 'collection', 'users', 'records'];
+    if (!validTabs.includes(tabName)) {
+      tabName = 'dashboard';
+    }
+
+    // 1. Hide all tab views
+    document.querySelectorAll('.admin-tab-view').forEach(view => {
+      view.style.display = 'none';
+    });
+
+    // 2. Show the targeted tab view
+    const targetView = document.getElementById('view-' + tabName);
+    if (targetView) {
+      targetView.style.display = 'block';
+    }
+
+    // 3. Update active state on sidebar links
+    document.querySelectorAll('.sidebar-nav-item').forEach(item => {
+      if (item.getAttribute('data-tab') === tabName) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+
+    // 4. Update URL Hash without triggering a page jump
+    if (history.pushState) {
+      history.pushState(null, null, '#' + tabName);
+    } else {
+      location.hash = '#' + tabName;
+    }
+
+    // 5. Scroll smoothly to top
+    window.scrollTo({ top: 0, behavior: 'instant' });
+
+    // 6. Refresh paginator for active tab
+    if (tabName === 'disposal' && window.disposalPaginator) window.disposalPaginator.refresh();
+    if (tabName === 'requests' && window.requestsPaginator) window.requestsPaginator.refresh();
+    if (tabName === 'collection' && window.collectionPaginator) window.collectionPaginator.refresh();
+    if (tabName === 'users' && window.usersPaginator) window.usersPaginator.refresh();
+    if (tabName === 'records' && window.recordsPaginator) window.recordsPaginator.refresh();
+  }
+
+  // Handle URL hash on initial load or popstate
+  window.addEventListener('DOMContentLoaded', () => {
+    initAdminPaginators();
+    const hash = window.location.hash.replace('#', '').toLowerCase();
+    if (hash && ['dashboard', 'disposal', 'requests', 'collection', 'users', 'records'].includes(hash)) {
+      switchAdminTab(hash);
+    } else {
+      switchAdminTab('dashboard');
+    }
+  });
+
+  window.addEventListener('hashchange', () => {
+    const hash = window.location.hash.replace('#', '').toLowerCase();
+    if (hash && ['dashboard', 'disposal', 'requests', 'collection', 'users', 'records'].includes(hash)) {
+      switchAdminTab(hash);
+    }
+  });
+
+
+
+  // Modal & Map Logic for Requests
+  // --- Pickup Location preview modal (map, place name, coords, directions) ---
+  let pickupMap = null;
+  let pickupMapMarker = null;
+
+  function openPickupMapModal(lat, lng, label, reqLabel) {
+    document.getElementById('pickupMapReqLabel').textContent = reqLabel ? `Request #${reqLabel}` : '';
+    document.getElementById('pickupMapPlaceName').textContent = label || 'Pickup Location';
+    document.getElementById('pickupMapLat').textContent = lat.toFixed(5);
+    document.getElementById('pickupMapLng').textContent = lng.toFixed(5);
+    document.getElementById('pickupMapDirectionsLink').href = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+
+    document.getElementById('pickupMapModalOverlay').style.display = 'flex';
+
+    setTimeout(() => {
+      const el = document.getElementById('pickupMapPreview');
+      if (!pickupMap) {
+        pickupMap = L.map(el, { scrollWheelZoom: false }).setView([lat, lng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(pickupMap);
+      } else {
+        pickupMap.setView([lat, lng], 15);
+        if (pickupMapMarker) pickupMap.removeLayer(pickupMapMarker);
+      }
+
+      const pinIcon = L.divIcon({
+        className: 'custom-map-user-pin',
+        html: '<div style="background:#EF4444; width:28px; height:28px; border-radius:50%; border:3px solid #fff; box-shadow:0 2px 8px rgba(239,68,68,0.6); display:flex; align-items:center; justify-content:center; color:#fff; font-size:13px;"><i class="bi bi-geo-alt-fill"></i></div>',
+        iconSize: [28, 28],
+        iconAnchor: [14, 28]
+      });
+      pickupMapMarker = L.marker([lat, lng], { icon: pinIcon }).addTo(pickupMap);
+      pickupMapMarker.bindPopup(label || 'Pickup Location').openPopup();
+      pickupMap.invalidateSize();
+    }, 100);
+  }
+
+  function closePickupMapModal() {
+    document.getElementById('pickupMapModalOverlay').style.display = 'none';
+  }
+
+  // --- Generic Yes/No confirmation modal for delete/reject/mark-collected actions ---
+  let adminConfirmTargetFormId = null;
+
+  function confirmAdminAction(formId, title, desc, yesLabel) {
+    adminConfirmTargetFormId = formId;
+    document.getElementById('adminConfirmTitle').textContent = title || 'Are you sure?';
+    document.getElementById('adminConfirmDesc').textContent = desc || 'This action cannot be undone.';
+    document.getElementById('adminConfirmYesLabel').textContent = yesLabel || 'Yes';
+    document.getElementById('adminConfirmOverlay').style.display = 'flex';
+  }
+
+  function closeAdminConfirm() {
+    adminConfirmTargetFormId = null;
+    document.getElementById('adminConfirmOverlay').style.display = 'none';
+  }
+
+  function runAdminConfirm() {
+    if (adminConfirmTargetFormId) {
+      const form = document.getElementById(adminConfirmTargetFormId);
+      if (form) form.submit();
+    }
+    closeAdminConfirm();
+  }
+
+  // --- Add / Edit Area Collection Schedule modal ---
+  const scheduleModalOverlay = document.getElementById('scheduleModalOverlay');
+  const scheduleForm = document.getElementById('scheduleForm');
+  const scheduleModalTitle = document.getElementById('scheduleModalTitle');
+  const scheduleSubmitBtn = document.getElementById('scheduleSubmitBtn');
+  const scheduleAreaInput = document.getElementById('scheduleAreaInput');
+  const schedulePincodeInput = document.getElementById('schedulePincodeInput');
+  const scheduleCollectorInput = document.getElementById('scheduleCollectorInput');
+  const scheduleDayInput = document.getElementById('scheduleDayInput');
+  const scheduleStartInput = document.getElementById('scheduleStartInput');
+  const scheduleEndInput = document.getElementById('scheduleEndInput');
+  const scheduleActiveInput = document.getElementById('scheduleActiveInput');
+  const ADD_SCHEDULE_URL = "{{ url_for('admin_add_collection_schedule') }}";
+
+  function openScheduleModal(id, area, pincode, collectorName, dayOfWeek, timeStart, timeEnd, active) {
+    if (!scheduleModalOverlay || !scheduleForm) return;
+
+    if (id) {
+      // Editing an existing schedule row
+      scheduleModalTitle.innerHTML = '<i class="bi bi-calendar-event me-2" style="color:var(--brand-primary);"></i>Edit Area Schedule';
+      scheduleSubmitBtn.textContent = 'Save Changes';
+      scheduleForm.action = `/admin/collection-schedule/${id}/update`;
+      scheduleAreaInput.value = area || '';
+      if (schedulePincodeInput) schedulePincodeInput.value = pincode || '';
+      if (scheduleCollectorInput) scheduleCollectorInput.value = collectorName || 'EcoCycle Municipal Collector';
+      scheduleDayInput.value = dayOfWeek || 'Monday';
+      scheduleStartInput.value = timeStart || '09:00';
+      scheduleEndInput.value = timeEnd || '13:00';
+      scheduleActiveInput.checked = !!active;
+    } else {
+      // Adding a brand new schedule row
+      scheduleModalTitle.innerHTML = '<i class="bi bi-calendar-event me-2" style="color:var(--brand-primary);"></i>Add Area Schedule';
+      scheduleSubmitBtn.textContent = 'Add Schedule';
+      scheduleForm.action = ADD_SCHEDULE_URL;
+      scheduleForm.reset();
+      if (schedulePincodeInput) schedulePincodeInput.value = '';
+      if (scheduleCollectorInput) scheduleCollectorInput.value = 'EcoCycle Municipal Collector';
+      scheduleStartInput.value = '09:00';
+      scheduleEndInput.value = '13:00';
+      scheduleActiveInput.checked = true;
+    }
+
+    scheduleModalOverlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeScheduleModal() {
+    if (!scheduleModalOverlay) return;
+    scheduleModalOverlay.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  if (scheduleModalOverlay) {
+    scheduleModalOverlay.addEventListener('click', (e) => {
+      if (e.target === scheduleModalOverlay) closeScheduleModal();
+    });
+  }
+
+  let adminMap = null;
+  let userMarker = null;
+  let facilityMarker = null;
+  let activeLine = null;
+  let currentReviewRequestId = null;
+
+  async function openReviewModal(requestId) {
+    const modal = document.getElementById('assignModalOverlay');
+    modal.style.display = 'flex';
+    currentReviewRequestId = requestId;
+
+    document.getElementById('modalFacilityCard').textContent = 'Loading…';
+    document.getElementById('modalWasteImage').style.display = 'none';
+    document.getElementById('modalWasteImageFallback').style.display = 'block';
+
+    try {
+      const res = await fetch(`/api/admin/disposal-requests/${requestId}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || 'Failed to load request details.');
+        closeAssignModal();
+        return;
+      }
+
+      const req = data.request;
+
+      document.getElementById('modalTitle').textContent = `Review Request #REQ-${req.id}`;
+      document.getElementById('modalSubtitle').textContent = `User: ${req.user_name} • ${req.created_at}`;
+      document.getElementById('modalUserName').textContent = req.user_name;
+      document.getElementById('modalObjectName').textContent = req.object_name;
+      document.getElementById('modalCategory').textContent = req.category;
+      document.getElementById('modalCoords').textContent = `${req.user_lat.toFixed(4)}, ${req.user_lng.toFixed(4)}`;
+      document.getElementById('modalAdminNotesText').textContent = req.admin_notes || 'No notes recorded.';
+
+      const imgEl = document.getElementById('modalWasteImage');
+      const imgFallback = document.getElementById('modalWasteImageFallback');
+      if (req.image_url) {
+        imgEl.src = req.image_url;
+        imgEl.style.display = 'block';
+        imgFallback.style.display = 'none';
+      } else {
+        imgEl.style.display = 'none';
+        imgFallback.style.display = 'block';
+      }
+
+      const facilityCard = document.getElementById('modalFacilityCard');
+      if (req.location_name) {
+        facilityCard.innerHTML = `
+          <strong>${req.location_name}</strong>${req.distance_km != null ? ` &bull; ~${req.distance_km} km away` : ''}<br>
+          <span style="color:var(--text-muted);">Address:</span> ${req.location_address || 'N/A'}${req.location_city ? ', ' + req.location_city : ''}<br>
+          <span style="color:var(--text-muted);">Hours:</span> ${req.location_hours || 'N/A'} &bull; <span style="color:var(--text-muted);">Phone:</span> ${req.location_phone || 'N/A'}
+        `;
+      } else {
+        facilityCard.innerHTML = 'No facility could be auto-matched for this location yet — no nearby coverage found.';
+      }
+
+      setTimeout(() => {
+        renderAdminMap(req.user_lat, req.user_lng, req.object_name, req);
+      }, 100);
+
+    } catch (err) {
+      console.error(err);
+      alert('Error fetching request data.');
+    }
+  }
+
+  function renderAdminMap(userLat, userLng, objectName, req) {
+    const mapContainer = document.getElementById('adminModalMap');
+    if (!adminMap) {
+      adminMap = L.map(mapContainer, { scrollWheelZoom: false }).setView([userLat, userLng], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(adminMap);
+    } else {
+      adminMap.setView([userLat, userLng], 12);
+      if (userMarker) adminMap.removeLayer(userMarker);
+      if (facilityMarker) { adminMap.removeLayer(facilityMarker); facilityMarker = null; }
+      if (activeLine) { adminMap.removeLayer(activeLine); activeLine = null; }
+    }
+
+    const userIcon = L.divIcon({
+      className: 'custom-map-user-pin',
+      html: '<div style="background:#EF4444; width:26px; height:26px; border-radius:50%; border:3px solid #fff; box-shadow:0 2px 8px rgba(239,68,68,0.6); display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px;"><i class="bi bi-geo-alt-fill"></i></div>',
+      iconSize: [26, 26],
+      iconAnchor: [13, 13]
+    });
+    userMarker = L.marker([userLat, userLng], { icon: userIcon }).addTo(adminMap);
+    userMarker.bindPopup(`<b><i class="bi bi-geo-alt-fill text-danger me-1"></i> User Location</b><br>${objectName}`).openPopup();
+
+    const bounds = [ [userLat, userLng] ];
+
+    if (req.location_lat && req.location_lng) {
+      const centerIcon = L.divIcon({
+        className: 'custom-map-center-pin',
+        html: `<div style="background:#10B981; width:24px; height:24px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center; color:#fff; font-size:11px;"><i class="bi bi-building"></i></div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      });
+      facilityMarker = L.marker([req.location_lat, req.location_lng], { icon: centerIcon }).addTo(adminMap);
+      facilityMarker.bindPopup(`<b>${req.location_name}</b>${req.distance_km != null ? `<br>${req.distance_km} km away` : ''}`);
+      bounds.push([req.location_lat, req.location_lng]);
+
+      activeLine = L.polyline([[userLat, userLng], [req.location_lat, req.location_lng]], {
+        color: '#10B981',
+        weight: 3,
+        dashArray: '5, 5'
+      }).addTo(adminMap);
+    }
+
+    adminMap.fitBounds(bounds, { padding: [30, 30] });
+    adminMap.invalidateSize();
+  }
+
+  function closeAssignModal() {
+    document.getElementById('assignModalOverlay').style.display = 'none';
+  }
+
+  function openAddLocationModal() {
+    document.getElementById('locModalTitle').textContent = 'Register New Disposal Facility';
+    document.getElementById('locModalSubtitle').textContent = 'Add a certified recycling depot or containment center to the directory.';
+    document.getElementById('locSubmitBtn').textContent = 'Register Center';
+    document.getElementById('locModalForm').action = "{{ url_for('admin_add_location') }}";
+    
+    document.getElementById('locNameInput').value = '';
+    document.getElementById('locCategoryInput').value = 'Recyclable';
+    document.getElementById('locCityInput').value = 'Bengaluru';
+    document.getElementById('locAddressInput').value = '';
+    document.getElementById('locLatInput').value = '';
+    document.getElementById('locLngInput').value = '';
+    document.getElementById('locHoursInput').value = 'Mon-Sat: 08:00 - 18:00';
+    document.getElementById('locPhoneInput').value = '+91 98765 43210';
+
+    document.getElementById('addLocModalOverlay').style.display = 'flex';
+  }
+
+  function openEditLocationModal(id, name, category, city, address, lat, lng, hours, phone) {
+    document.getElementById('locModalTitle').textContent = 'Edit Disposal Facility #' + id;
+    document.getElementById('locModalSubtitle').textContent = 'Update facility information, stream category, address, or GPS coordinates.';
+    document.getElementById('locSubmitBtn').textContent = 'Save Changes';
+    document.getElementById('locModalForm').action = '/admin/disposal-locations/' + id + '/edit';
+    
+    document.getElementById('locNameInput').value = name || '';
+    
+    const catSelect = document.getElementById('locCategoryInput');
+    let matched = false;
+    for (let opt of catSelect.options) {
+      if (opt.value.toLowerCase() === (category || '').toLowerCase() || (category && category.toLowerCase().includes(opt.value.toLowerCase()))) {
+        catSelect.value = opt.value;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) catSelect.value = 'Universal';
+    
+    document.getElementById('locCityInput').value = city || 'Bengaluru';
+    document.getElementById('locAddressInput').value = address || '';
+    document.getElementById('locLatInput').value = (lat !== undefined && lat !== null) ? lat : '';
+    document.getElementById('locLngInput').value = (lng !== undefined && lng !== null) ? lng : '';
+    document.getElementById('locHoursInput').value = hours || '';
+    document.getElementById('locPhoneInput').value = phone || '';
+
+    document.getElementById('addLocModalOverlay').style.display = 'flex';
+  }
+
+  function closeAddLocationModal() {
+    document.getElementById('addLocModalOverlay').style.display = 'none';
+  }
+
+  function filterDisposalLocations() {
+    const searchVal = (document.getElementById('disposalSearchInput')?.value || '').toLowerCase().trim();
+    const cityVal = (document.getElementById('disposalCityFilter')?.value || 'all').toLowerCase();
+    const rows = document.querySelectorAll('.disposal-loc-row');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+      const city = (row.dataset.city || '').toLowerCase();
+      const name = (row.dataset.name || '').toLowerCase();
+      const cat = (row.dataset.cat || '').toLowerCase();
+      const addr = (row.dataset.addr || '').toLowerCase();
+
+      const matchesCity = (cityVal === 'all' || city === cityVal || city.includes(cityVal));
+      const matchesSearch = !searchVal || name.includes(searchVal) || city.includes(searchVal) || cat.includes(searchVal) || addr.includes(searchVal);
+
+      if (matchesCity && matchesSearch) {
+        row.dataset.filteredOut = 'false';
+        visibleCount++;
+      } else {
+        row.dataset.filteredOut = 'true';
+      }
+    });
+
+    const countEl = document.getElementById('disposalTotalCount');
+    if (countEl) {
+      countEl.textContent = visibleCount;
+    }
+
+    if (window.disposalPaginator) {
+      window.disposalPaginator.currentPage = 1;
+      window.disposalPaginator.refresh();
+    }
+  }
+
+  // =========================================================================
+  // Admin Table Pagination Component
+  // =========================================================================
+  class AdminTablePaginator {
+    constructor(options) {
+      this.tableId = options.tableId;
+      this.containerId = options.containerId;
+      this.pageSize = options.pageSize || 10;
+      this.currentPage = 1;
+      this.rowSelector = options.rowSelector || 'tbody tr';
+      this.itemLabel = options.itemLabel || 'entries';
+      this.pageSizeOptions = options.pageSizeOptions || [10, 25, 50];
+      this.init();
+    }
+
+    getTable() {
+      return document.getElementById(this.tableId);
+    }
+
+    getContainer() {
+      return document.getElementById(this.containerId);
+    }
+
+    getEligibleRows() {
+      const table = this.getTable();
+      if (!table) return [];
+      const rows = Array.from(table.querySelectorAll(this.rowSelector));
+      return rows.filter(r => !r.classList.contains('no-paginate-row') && r.dataset.filteredOut !== 'true');
+    }
+
+    getAllRows() {
+      const table = this.getTable();
+      if (!table) return [];
+      const rows = Array.from(table.querySelectorAll(this.rowSelector));
+      return rows.filter(r => !r.classList.contains('no-paginate-row'));
+    }
+
+    getTotalPages() {
+      const eligible = this.getEligibleRows();
+      return Math.max(1, Math.ceil(eligible.length / this.pageSize));
+    }
+
+    setPage(page) {
+      const totalPages = this.getTotalPages();
+      if (page < 1) page = 1;
+      if (page > totalPages) page = totalPages;
+      this.currentPage = page;
+      this.render();
+    }
+
+    setPageSize(size) {
+      this.pageSize = parseInt(size, 10) || 10;
+      this.currentPage = 1;
+      this.render();
+    }
+
+    refresh() {
+      const totalPages = this.getTotalPages();
+      if (this.currentPage > totalPages) {
+        this.currentPage = totalPages;
+      }
+      this.render();
+    }
+
+    render() {
+      const table = this.getTable();
+      const container = this.getContainer();
+      if (!table || !container) return;
+
+      const eligibleRows = this.getEligibleRows();
+      const allRows = this.getAllRows();
+      const totalItems = eligibleRows.length;
+      const totalPages = Math.max(1, Math.ceil(totalItems / this.pageSize));
+
+      if (this.currentPage > totalPages) this.currentPage = totalPages;
+      if (this.currentPage < 1) this.currentPage = 1;
+
+      const startIndex = (this.currentPage - 1) * this.pageSize;
+      const endIndex = Math.min(startIndex + this.pageSize, totalItems);
+
+      // Show or hide rows based on current page
+      allRows.forEach(row => {
+        if (row.dataset.filteredOut === 'true') {
+          row.style.display = 'none';
+          return;
+        }
+        const eligibleIndex = eligibleRows.indexOf(row);
+        if (eligibleIndex >= startIndex && eligibleIndex < endIndex) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+
+      if (totalItems === 0) {
+        container.innerHTML = `
+          <div class="admin-pagination-info">
+            No ${this.itemLabel} found
+          </div>
+        `;
+        return;
+      }
+
+      let html = `
+        <div class="admin-pagination-info">
+          Showing <strong>${startIndex + 1}</strong> to <strong>${endIndex}</strong> of <strong>${totalItems}</strong> ${this.itemLabel}
+        </div>
+        <div class="admin-pagination-actions">
+          <div class="admin-pagination-size">
+            <label for="${this.containerId}-size">Show:</label>
+            <select id="${this.containerId}-size" class="admin-page-size-select">
+              ${this.pageSizeOptions.map(opt => `<option value="${opt}" ${opt === this.pageSize ? 'selected' : ''}>${opt}</option>`).join('')}
+            </select>
+          </div>
+          <div class="admin-pagination-nav">
+            <button type="button" class="admin-pag-btn pag-first" ${this.currentPage === 1 ? 'disabled' : ''} title="First Page">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="11 17 6 12 11 7"></polyline><polyline points="18 17 13 12 18 7"></polyline></svg>
+            </button>
+            <button type="button" class="admin-pag-btn pag-prev" ${this.currentPage === 1 ? 'disabled' : ''} title="Previous Page">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+      `;
+
+      const pageButtons = this.getPageNumbers(this.currentPage, totalPages);
+      pageButtons.forEach(p => {
+        if (p === '...') {
+          html += `<span class="admin-pag-ellipsis">…</span>`;
+        } else {
+          html += `<button type="button" class="admin-pag-btn ${p === this.currentPage ? 'active' : ''}" data-page="${p}">${p}</button>`;
+        }
+      });
+
+      html += `
+            <button type="button" class="admin-pag-btn pag-next" ${this.currentPage === totalPages ? 'disabled' : ''} title="Next Page">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+            <button type="button" class="admin-pag-btn pag-last" ${this.currentPage === totalPages ? 'disabled' : ''} title="Last Page">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg>
+            </button>
+          </div>
+        </div>
+      `;
+
+      container.innerHTML = html;
+
+      const sizeSelect = container.querySelector('.admin-page-size-select');
+      if (sizeSelect) {
+        sizeSelect.addEventListener('change', (e) => {
+          this.setPageSize(e.target.value);
+        });
+      }
+
+      const firstBtn = container.querySelector('.pag-first');
+      if (firstBtn && this.currentPage > 1) {
+        firstBtn.addEventListener('click', () => this.setPage(1));
+      }
+
+      const prevBtn = container.querySelector('.pag-prev');
+      if (prevBtn && this.currentPage > 1) {
+        prevBtn.addEventListener('click', () => this.setPage(this.currentPage - 1));
+      }
+
+      const nextBtn = container.querySelector('.pag-next');
+      if (nextBtn && this.currentPage < totalPages) {
+        nextBtn.addEventListener('click', () => this.setPage(this.currentPage + 1));
+      }
+
+      const lastBtn = container.querySelector('.pag-last');
+      if (lastBtn && this.currentPage < totalPages) {
+        lastBtn.addEventListener('click', () => this.setPage(totalPages));
+      }
+
+      container.querySelectorAll('.admin-pag-btn[data-page]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const p = parseInt(btn.getAttribute('data-page'), 10);
+          if (p && p !== this.currentPage) {
+            this.setPage(p);
+          }
+        });
+      });
+    }
+
+    getPageNumbers(current, total) {
+      if (total <= 7) {
+        return Array.from({ length: total }, (_, i) => i + 1);
+      }
+      if (current <= 4) {
+        return [1, 2, 3, 4, 5, '...', total];
+      }
+      if (current >= total - 3) {
+        return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+      }
+      return [1, '...', current - 1, current, current + 1, '...', total];
+    }
+
+    init() {
+      this.render();
+    }
+  }
+
+  function initAdminPaginators() {
+    window.disposalPaginator = new AdminTablePaginator({
+      tableId: 'disposalLocationsTable',
+      containerId: 'disposalPagination',
+      pageSize: 10,
+      itemLabel: 'facilities'
+    });
+
+    window.requestsPaginator = new AdminTablePaginator({
+      tableId: 'assignedLocationsTable',
+      containerId: 'assignedLocationsPagination',
+      pageSize: 10,
+      itemLabel: 'requests'
+    });
+
+    window.collectionPaginator = new AdminTablePaginator({
+      tableId: 'collectionSchedulesTable',
+      containerId: 'collectionPagination',
+      pageSize: 10,
+      itemLabel: 'schedules'
+    });
+
+    window.usersPaginator = new AdminTablePaginator({
+      tableId: 'usersTable',
+      containerId: 'usersPagination',
+      pageSize: 10,
+      itemLabel: 'users'
+    });
+
+    window.recordsPaginator = new AdminTablePaginator({
+      tableId: 'recordsTable',
+      containerId: 'recordsPagination',
+      pageSize: 10,
+      itemLabel: 'records'
+    });
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,9 @@
+tensorflow
+Pillow
+numpy
+matplotlib
+scikit-learn
+flask
+groq
+python-dotenv
+psycopg2-binary

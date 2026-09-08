@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}EcoCycle AI — System Architecture &amp; Neural Specs{% endblock %}
+
+{% block content %}
+
+<div class="about-page-container container">
+  <div class="section-header-center">
+    <div class="section-eyebrow">Deep Learning Engineering</div>
+    <h1 class="section-title">System Architecture &amp; AI Specs</h1>
+    <p class="section-desc">
+      A technical breakdown of the deep convolutional neural network, multimodal vision grounding layer, and inference pipeline powering EcoCycle AI.
+    </p>
+  </div>
+
+  <!-- Hero Overview Block -->
+  <div class="about-hero-block">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:20px; flex-wrap:wrap; margin-bottom:20px;">
+      <div>
+        <span class="badge badge-primary" style="margin-bottom:10px;">Model Specification</span>
+        <h2 style="font-size:1.8rem; margin-bottom:8px;">MobileNetV2 Waste Classification Pipeline</h2>
+        <p style="max-width:680px; font-size:0.95rem;">
+          EcoCycle AI leverages transfer learning on an inverted residual MobileNetV2 backbone pretrained on ImageNet, coupled with a custom dense classification head trained specifically for fine-grained multi-class waste segregation.
+        </p>
+      </div>
+      <a href="{{ url_for('detect') }}" class="btn btn-primary">
+        <span>Test Model Live</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </a>
+    </div>
+
+    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:16px; padding-top:20px; border-top:1px solid var(--border-subtle); text-align:center;">
+      <div>
+        <div style="font-size:0.75rem; font-family:var(--font-mono); color:var(--text-muted);">INPUT RESOLUTION</div>
+        <div style="font-size:1.15rem; font-weight:800; font-family:var(--font-mono); color:var(--brand-primary);">224 x 224 x 3</div>
+      </div>
+      <div>
+        <div style="font-size:0.75rem; font-family:var(--font-mono); color:var(--text-muted);">NORMALIZATION</div>
+        <div style="font-size:1.15rem; font-weight:800; font-family:var(--font-mono); color:var(--brand-primary);">[-1.0, 1.0]</div>
+      </div>
+      <div>
+        <div style="font-size:0.75rem; font-family:var(--font-mono); color:var(--text-muted);">OUTPUT CLASSES</div>
+        <div style="font-size:1.15rem; font-weight:800; font-family:var(--font-mono); color:var(--brand-primary);">3 Stream Softmax</div>
+      </div>
+      <div>
+        <div style="font-size:0.75rem; font-family:var(--font-mono); color:var(--text-muted);">CONFIDENCE GUARD</div>
+        <div style="font-size:1.15rem; font-weight:800; font-family:var(--font-mono); color:var(--brand-primary);">&ge; 70.0%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tech Specs Grid -->
+  <div class="tech-specs-grid">
+    <div class="tech-spec-box">
+      <div class="tech-spec-label">Feature Extractor</div>
+      <h3 class="tech-spec-title">MobileNetV2 CNN</h3>
+      <p class="tech-spec-text">
+        Utilizes depthwise separable convolutions with inverted residuals and linear bottlenecks for low-latency feature extraction suitable for edge and cloud deployment.
+      </p>
+    </div>
+
+    <div class="tech-spec-box">
+      <div class="tech-spec-label">Semantic Pre-Check</div>
+      <h3 class="tech-spec-title">Multimodal Groq VLM</h3>
+      <p class="tech-spec-text">
+        A fast vision-language model checks whether images contain actual waste items and extracts natural language item labels (e.g. "lithium battery", "banana peel").
+      </p>
+    </div>
+
+    <div class="tech-spec-box">
+      <div class="tech-spec-label">Data Augmentation</div>
+      <h3 class="tech-spec-title">Robust Generalization</h3>
+      <p class="tech-spec-text">
+        Trained with real-time augmentation pipelines (rotation, zoom, horizontal flips, channel shifts) to maintain robustness across varied angles and lighting conditions.
+      </p>
+    </div>
+  </div>
+
+  <!-- API Integration Snippet -->
+  <div class="section-header-center" style="margin-top:64px; margin-bottom:32px;">
+    <div class="section-eyebrow">Developer Integration</div>
+    <h2 class="section-title">Inference REST API Endpoint</h2>
+    <p class="section-desc">Easily integrate EcoCycle AI into automated sorting hardware or mobile applications.</p>
+  </div>
+
+  <div class="code-preview-block">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid var(--bg-dark-border);">
+      <span style="color:var(--brand-primary); font-weight:700;">POST /predict &mdash; cURL &amp; Python Request</span>
+      <span style="color:var(--text-inverse-muted); font-size:0.75rem;">multipart/form-data</span>
+    </div>
+<pre><code># 1. cURL Request
+curl -X POST http://localhost:5000/predict \
+  -F "image=@/path/to/waste_sample.jpg"
+
+# 2. JSON Response
+{
+  "status": "ok",
+  "class": "Recyclable",
+  "confidence": 98.42,
+  "probabilities": {
+    "Hazardous": 0.38,
+    "Organic": 1.20,
+    "Recyclable": 98.42
+  },
+  "detected_object": "plastic water bottle",
+  "guidance": {
+    "icon": "♻️",
+    "color": "#457B9D",
+    "summary": "Can be processed and reused.",
+    "tips": [
+      "Rinse containers before recycling to remove food residue.",
+      "Flatten cardboard and plastic bottles to save space."
+    ]
+  }
+}</code></pre>
+  </div>
+</div>
+
+{% endblock %}

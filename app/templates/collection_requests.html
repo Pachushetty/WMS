@@ -1,0 +1,801 @@
+{% extends "base.html" %}
+{% block title %}EcoCycle AI — Collection Availability & Schedule{% endblock %}
+
+{% block content %}
+<div class="user-requests-container container" style="padding-top: 10px; padding-bottom: 12px;">
+  <!-- Header bar -->
+  <div class="requests-header-bar" style="margin-bottom: 8px;">
+    <div>
+      <h1 class="requests-page-title" style="font-size: 1.25rem; margin: 0 0 1px;">
+        <i class="bi bi-calendar3" style="color:var(--brand-primary); margin-right:4px;"></i> Collection Availability
+      </h1>
+      <p class="requests-page-subtitle" style="font-size: 0.8rem; margin: 0; color: var(--text-secondary);">
+        Confirm your Area &amp; PIN Code to view collector schedules, pickup days, and time windows.
+      </p>
+    </div>
+  </div>
+
+  <!-- Main view section (One Screen Fit) -->
+  <div class="requests-feed-wrapper" style="display:block; grid-template-columns: none;">
+    {% if not location %}
+      <!-- First-time Location Setup Box (Balanced One-Page Fit) -->
+      <div class="request-item-card" style="max-width: 590px; margin: 0 auto; padding: 18px 24px; border-radius: 14px; box-shadow: 0 6px 24px rgba(0,0,0,0.06); background: var(--bg-surface); border: 1px solid var(--border-color);">
+        <div style="text-align: center; margin-bottom: 10px;">
+          <h2 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin: 0 0 2px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <i class="bi bi-geo-alt-fill" style="color: #2563EB; font-size: 1.1rem;"></i> Set Your Pickup Location
+          </h2>
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0; line-height: 1.3;">
+            Enter Area &amp; PIN Code, or click on the map / GPS to pinpoint location.
+          </p>
+        </div>
+
+        <form id="firstTimeLocationForm" onsubmit="handleLocationSubmit(event, 'firstTime')">
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px;">
+              <div class="form-group" style="margin: 0;">
+                <label for="first_area" style="font-weight: 600; font-size: 0.8rem; color: var(--text-primary); margin-bottom: 2px; display: block;">
+                  Area / Locality <span style="color:#EF4444;">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="first_area"
+                  name="area"
+                  class="form-control"
+                  placeholder="e.g. Kotekar, Indiranagar"
+                  required
+                  style="padding: 6px 10px; font-size: 0.88rem; height: 35px; border-radius: 7px; width:100%;"
+                  oninput="debounceLocateMap('firstTime')"
+                />
+              </div>
+
+              <div class="form-group" style="margin: 0;">
+                <label for="first_pincode" style="font-weight: 600; font-size: 0.8rem; color: var(--text-primary); margin-bottom: 2px; display: block;">
+                  PIN Code <span style="color:#EF4444;">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="first_pincode"
+                  name="pincode"
+                  class="form-control"
+                  placeholder="e.g. 575025"
+                  pattern="[0-9]{4,10}"
+                  required
+                  style="padding: 6px 10px; font-size: 0.88rem; height: 35px; border-radius: 7px; width:100%;"
+                  oninput="debounceLocateMap('firstTime')"
+                />
+              </div>
+            </div>
+
+            <div class="form-group" style="margin: 0;">
+              <label for="first_address" style="font-weight: 600; font-size: 0.8rem; color: var(--text-primary); margin-bottom: 2px; display: block;">
+                Address <span style="color:var(--text-muted); font-weight: normal;">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                id="first_address"
+                name="address"
+                class="form-control"
+                placeholder="e.g. Door No. 4-12, Main Street, near Temple"
+                style="padding: 6px 10px; font-size: 0.88rem; height: 35px; border-radius: 7px; width:100%;"
+                oninput="debounceLocateMap('firstTime')"
+              />
+            </div>
+
+            <!-- Map Picker -->
+            <div style="margin-top: 1px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+                <span id="firstTimeMapStatus" style="font-size:0.72rem; color:var(--text-muted);">Click on map or type above to locate</span>
+              </div>
+              <div id="firstTimeMapPicker" style="height: 135px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface-subtle); overflow:hidden;"></div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:3px; font-size:0.7rem; color:var(--text-muted);">
+                <span><i class="bi bi-lightbulb" style="color:#F59E0B; margin-right:3px;"></i> Click on map to adjust position</span>
+                <span id="firstTimeCoordsDisplay" style="font-family: monospace;">Coordinates: Not set</span>
+              </div>
+            </div>
+
+            <!-- OR Divider + Use My Current Location Button -->
+            <div style="display:flex; align-items:center; gap:8px; margin: 3px 0 2px;">
+              <div style="flex:1; height:1px; background:var(--border-color);"></div>
+              <span style="font-size:0.7rem; color:var(--text-muted); font-weight:600; text-transform:uppercase;">or</span>
+              <div style="flex:1; height:1px; background:var(--border-color);"></div>
+            </div>
+
+            <div style="display:flex; justify-content:center;">
+              <button
+                type="button"
+                id="firstTimeGpsBtn"
+                onclick="locateCurrentGPS('firstTime')"
+                class="btn-current-location"
+                style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 16px; border-radius: 7px; border: 1px solid #93C5FD; background: rgba(37,99,235,0.04); color: #2563EB; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.03);"
+                onmouseover="this.style.background='rgba(37,99,235,0.1)'; this.style.borderColor='#2563EB';"
+                onmouseout="this.style.background='rgba(37,99,235,0.04)'; this.style.borderColor='#93C5FD';"
+              >
+                <i class="bi bi-crosshair2" style="font-size: 0.88rem; color: #2563EB;"></i>
+                <span>Use My Current Location</span>
+              </button>
+            </div>
+
+            <div id="firstTimeStatusMsg" style="display: none; padding: 6px 10px; border-radius: 6px; font-size: 0.78rem; line-height: 1.3;"></div>
+
+            <button
+              type="submit"
+              id="firstTimeSubmitBtn"
+              class="btn btn-primary btn-sm"
+              style="width: 100%; padding: 8px 14px; font-size: 0.88rem; font-weight: 700; border-radius: 7px; display: flex; align-items: center; justify-content: center; gap: 6px; background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); margin-top:2px; height: 37px;"
+            >
+              <span id="firstTimeBtnText">Confirm Location &amp; View Schedule</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+    {% else %}
+      <!-- Location Saved: 2 Balanced Side-by-Side Cards (Full Width) -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: stretch;">
+        
+        <!-- Left Column: Collector Schedule & Availability Card -->
+        {% if schedule %}
+          <div class="request-item-card" style="padding: 28px 30px; border-radius: 14px; border: 1px solid rgba(16,185,129,0.3); background: linear-gradient(180deg, rgba(16,185,129,0.03) 0%, var(--bg-surface) 100%); display:flex; flex-direction:column; justify-content:space-between; margin:0;">
+            <div>
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 14px; flex-wrap:wrap; gap:8px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <i class="bi bi-check-circle-fill" style="font-size: 1.35rem; color:#10B981;"></i>
+                  <div>
+                    <h3 style="font-size: 1.12rem; font-weight: 800; color: var(--text-primary); margin:0;">
+                      Collection Available
+                    </h3>
+                    <span style="font-size:0.78rem; color:var(--text-secondary);">
+                      Area: <strong>{{ schedule.area }}</strong>
+                    </span>
+                  </div>
+                </div>
+                <span class="badge" style="background:#10B981; color:white; font-size:0.72rem; font-weight:700; padding:3px 7px; border-radius:5px;">
+                  ACTIVE SERVICE
+                </span>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap: 9px; background: var(--bg-card); padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border-color); font-size: 0.86rem; margin-bottom: 14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="color: var(--text-muted);">Assigned Collector</span>
+                  <span style="font-weight: 700; color: var(--text-primary);">
+                    {{ schedule.collector_name or 'EcoCycle Municipal Collector' }}
+                  </span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="color: var(--text-muted);">Pickup Day</span>
+                  <span style="font-weight: 700; color: #F59E0B;">
+                    Every {{ schedule.day_of_week }}
+                  </span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="color: var(--text-muted);">Time Window</span>
+                  <span style="font-weight: 700; color: var(--brand-primary);">
+                    {{ time_range_display or (schedule.time_start ~ ' – ' ~ schedule.time_end) }}
+                  </span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; padding-top: 6px; border-top: 1px dashed var(--border-color);">
+                  <span style="color: var(--text-muted);">Next Scheduled Pickup</span>
+                  <span style="font-weight: 800; color: #10B981;">
+                    {{ next_date_display or 'Upcoming' }}
+                  </span>
+                </div>
+              </div>
+
+              <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0; line-height: 1.4;">
+                <i class="bi bi-lightbulb" style="color:#F59E0B; margin-right:3px;"></i> <em>Place segregated recyclables outside during this window on collection day.</em>
+              </p>
+            </div>
+          </div>
+
+        {% else %}
+          <!-- No Schedule Found Card -->
+          <div class="request-item-card" style="padding: 28px 30px; border-radius: 14px; border: 1px solid rgba(239,68,68,0.3); background: linear-gradient(180deg, rgba(239,68,68,0.03) 0%, var(--bg-surface) 100%); display:flex; flex-direction:column; justify-content:space-between; margin:0;">
+            <div>
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom: 12px;">
+                <i class="bi bi-exclamation-triangle-fill" style="font-size: 1.35rem; color:#EF4444;"></i>
+                <div>
+                  <h3 style="font-size: 1.12rem; font-weight: 800; color: var(--text-primary); margin:0;">
+                    Collection Unavailable
+                  </h3>
+                  <span style="font-size:0.78rem; color:var(--text-secondary);">
+                    Area: <strong>{{ location.area }}</strong>
+                  </span>
+                </div>
+              </div>
+
+              <div style="padding: 12px 14px; border-radius: 10px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); margin-bottom: 12px;">
+                <p style="font-size: 0.88rem; font-weight: 700; color: #DC2626; margin: 0 0 4px;">
+                  Collection service is currently not available in your area.
+                </p>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0; line-height: 1.4;">
+                  The administrator has not configured a waste collection schedule for <strong>{{ location.area }}</strong>{% if location.pincode %} (PIN: {{ location.pincode }}){% endif %} yet.
+                </p>
+              </div>
+
+              <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 14px;">
+                You can change to a neighboring area or update your location coordinates below.
+              </p>
+            </div>
+
+            <div>
+              <button type="button" class="btn btn-primary btn-sm" onclick="openEditLocationModal()" style="width: 100%; justify-content: center; padding: 8px 12px; font-size:0.84rem; background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);">
+                <span>Update Location</span>
+              </button>
+            </div>
+          </div>
+        {% endif %}
+
+        <!-- Right Column: User Saved Location & Interactive Map Card -->
+        <div class="request-item-card" style="padding: 24px 28px; border-radius: 14px; background: var(--bg-surface); border: 1px solid var(--border-color); display:flex; flex-direction:column; justify-content:space-between; margin:0;">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <i class="bi bi-geo-alt-fill" style="font-size: 1.1rem; color:#2563EB;"></i>
+                <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-primary); margin:0;">
+                  Your Saved Location
+                </h3>
+              </div>
+              <button type="button" class="btn btn-xs btn-secondary" onclick="openEditLocationModal()" style="padding: 3px 9px; font-size:0.75rem;">
+                Edit
+              </button>
+            </div>
+
+            <!-- Compact Embedded Map -->
+            <div id="locationPreviewMap" style="height: 175px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-surface-subtle); margin-bottom: 12px; overflow:hidden;"></div>
+
+            <div style="display:flex; flex-direction:column; gap: 7px; background: var(--bg-card); padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border-color); font-size: 0.82rem;">
+              <div style="display:flex; justify-content:space-between;">
+                <span style="color: var(--text-muted);">Area / Locality</span>
+                <span style="font-weight: 700; color: var(--text-primary);">{{ location.area }}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between;">
+                <span style="color: var(--text-muted);">PIN Code</span>
+                <span style="font-weight: 700; color: var(--text-primary);">{{ location.pincode or '—' }}</span>
+              </div>
+              {% if location.address %}
+              <div style="display:flex; justify-content:space-between;">
+                <span style="color: var(--text-muted);">Address</span>
+                <span style="font-weight: 500; color: var(--text-primary); text-align:right; max-width: 65%;">
+                  {{ location.address }}
+                </span>
+              </div>
+              {% endif %}
+              <div style="display:flex; justify-content:space-between; align-items:center; padding-top: 5px; border-top: 1px dashed var(--border-color);">
+                <span style="color: var(--text-muted);">Coordinates</span>
+                <span style="font-family: monospace; font-size: 0.76rem; background: var(--bg-surface); padding: 1px 6px; border-radius: 5px; border: 1px solid var(--border-color);">
+                  {% if location.lat and location.lng %}
+                    {{ "%.4f"|format(location.lat) }}°, {{ "%.4f"|format(location.lng) }}°
+                  {% else %}
+                    Geocoded
+                  {% endif %}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Edit Location Modal with Live Interactive Map -->
+<div id="editLocationModal" class="ec-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(4px); padding:16px;">
+  <div class="ec-modal-content" style="background:var(--bg-surface); border-radius:16px; max-width:520px; width:100%; max-height:90vh; overflow-y:auto; padding:22px; box-shadow:0 20px 50px rgba(0,0,0,0.25); border:1px solid var(--border-color); animation:modalSlideUp 0.25s ease-out;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <i class="bi bi-geo-alt-fill" style="font-size:1.15rem; color:#2563EB;"></i>
+        <h3 style="margin:0; font-size:1.15rem; font-weight:800; color:var(--text-primary);">Update Pickup Location</h3>
+      </div>
+      <button type="button" onclick="closeEditLocationModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-muted); line-height:1;">&times;</button>
+    </div>
+
+    <form id="editLocationForm" onsubmit="handleLocationSubmit(event, 'modal')">
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:10px;">
+          <div class="form-group" style="margin:0;">
+            <label for="modal_area" style="font-weight:600; font-size:0.82rem; color:var(--text-primary); margin-bottom:3px; display:block;">
+              Area / Locality <span style="color:#EF4444;">*</span>
+            </label>
+            <input
+              type="text"
+              id="modal_area"
+              name="area"
+              class="form-control"
+              value="{{ location.area if location else '' }}"
+              placeholder="e.g. Kotekar, Indiranagar"
+              required
+              style="padding:8px 10px; font-size:0.88rem; border-radius:8px; width:100%;"
+              oninput="debounceLocateMap('modal')"
+            />
+          </div>
+
+          <div class="form-group" style="margin:0;">
+            <label for="modal_pincode" style="font-weight:600; font-size:0.82rem; color:var(--text-primary); margin-bottom:3px; display:block;">
+              PIN Code <span style="color:#EF4444;">*</span>
+            </label>
+            <input
+              type="text"
+              id="modal_pincode"
+              name="pincode"
+              class="form-control"
+              value="{{ location.pincode if location else '' }}"
+              placeholder="e.g. 575025"
+              pattern="[0-9]{4,10}"
+              required
+              style="padding:8px 10px; font-size:0.88rem; border-radius:8px; width:100%;"
+              oninput="debounceLocateMap('modal')"
+            />
+          </div>
+        </div>
+
+        <div class="form-group" style="margin:0;">
+          <label for="modal_address" style="font-weight:600; font-size:0.82rem; color:var(--text-primary); margin-bottom:3px; display:block;">
+            Street Address <span style="color:var(--text-muted); font-weight:normal;">(Optional)</span>
+          </label>
+          <input
+            type="text"
+            id="modal_address"
+            name="address"
+            class="form-control"
+            value="{{ location.address if location else '' }}"
+            placeholder="e.g. House No. 4-12, Main Road"
+            style="padding:8px 10px; font-size:0.88rem; border-radius:8px; width:100%;"
+            oninput="debounceLocateMap('modal')"
+          />
+        </div>
+
+        <!-- Modal Map Preview -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <span id="modalMapStatus" style="font-size:0.75rem; color:var(--text-muted);">Click on map or type above to locate</span>
+          </div>
+          <div id="modalMapPicker" style="height: 150px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-surface-subtle); overflow:hidden;"></div>
+          <div style="display:flex; justify-content:space-between; margin-top:3px; font-size:0.72rem; color:var(--text-muted);">
+            <span>Tap on map to select place</span>
+            <span id="modalCoordsDisplay" style="font-family: monospace;">{{ "%.4f"|format(location.lat) if location else '' }}, {{ "%.4f"|format(location.lng) if location else '' }}</span>
+          </div>
+          <!-- OR divider + GPS button -->
+          <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
+            <div style="flex:1; height:1px; background:var(--border-color);"></div>
+            <span style="font-size:0.72rem; color:var(--text-muted); font-weight:600; text-transform:uppercase;">or</span>
+            <div style="flex:1; height:1px; background:var(--border-color);"></div>
+          </div>
+          <div style="display:flex; justify-content:center; margin-top:4px;">
+            <button
+              type="button"
+              id="modalGpsBtn"
+              onclick="locateCurrentGPS('modal')"
+              style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 14px; border-radius: 7px; border: 1px solid #93C5FD; background: rgba(37,99,235,0.04); color: #2563EB; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;"
+              onmouseover="this.style.background='rgba(37,99,235,0.1)'; this.style.borderColor='#2563EB';"
+              onmouseout="this.style.background='rgba(37,99,235,0.04)'; this.style.borderColor='#93C5FD';"
+            >
+              <i class="bi bi-crosshair2" style="font-size: 0.9rem; color: #2563EB;"></i>
+              <span>Use My Current Location</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="modalStatusMsg" style="display:none; padding:8px 12px; border-radius:6px; font-size:0.82rem; line-height:1.4;"></div>
+
+        <div style="display:flex; gap:8px; margin-top:4px;">
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            onclick="closeEditLocationModal()"
+            style="flex:1; padding:9px;"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            id="modalSubmitBtn"
+            class="btn btn-primary btn-sm"
+            style="flex:2; padding:9px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:6px; background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);"
+          >
+            <span id="modalBtnText">Confirm Location</span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.custom-map-pin {
+  background: #2563EB;
+  width: 20px;
+  height: 20px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+}
+</style>
+
+<script>
+const SAVED_LOCATION = {{ location|tojson if location else 'null' }};
+const DEFAULT_CENTER = [12.9141, 74.8560];
+
+let previewMap = null;
+let firstTimeMap = null, firstTimeMarker = null;
+let modalMap = null, modalMarker = null;
+let debounceTimer = null;
+
+let pickedCoords = {
+  firstTime: { lat: SAVED_LOCATION?.lat || null, lng: SAVED_LOCATION?.lng || null },
+  modal: { lat: SAVED_LOCATION?.lat || null, lng: SAVED_LOCATION?.lng || null }
+};
+
+function createPinIcon() {
+  return L.divIcon({
+    className: 'custom-map-user-pin',
+    html: '<div class="custom-map-pin"></div>',
+    iconSize: [20, 20],
+    iconAnchor: [10, 20]
+  });
+}
+
+// -------------------------------------------------------------
+// Initialize Maps
+// -------------------------------------------------------------
+function initPreviewMap() {
+  const mapEl = document.getElementById('locationPreviewMap');
+  if (!mapEl || !SAVED_LOCATION || !SAVED_LOCATION.lat || !SAVED_LOCATION.lng) return;
+
+  try {
+    if (previewMap) { previewMap.remove(); previewMap = null; }
+    previewMap = L.map(mapEl, {
+      zoomControl: true,
+      scrollWheelZoom: false,
+    }).setView([SAVED_LOCATION.lat, SAVED_LOCATION.lng], 15);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(previewMap);
+
+    L.marker([SAVED_LOCATION.lat, SAVED_LOCATION.lng], { icon: createPinIcon() })
+      .addTo(previewMap)
+      .bindPopup(`<b>${SAVED_LOCATION.area}</b><br>${SAVED_LOCATION.pincode || ''}`);
+
+    setTimeout(() => previewMap.invalidateSize(), 200);
+  } catch (err) {
+    console.warn('Preview map init error:', err);
+  }
+}
+
+function initPickerMap(context) {
+  const isModal = context === 'modal';
+  const mapId = isModal ? 'modalMapPicker' : 'firstTimeMapPicker';
+  const mapEl = document.getElementById(mapId);
+  if (!mapEl) return;
+
+  const startLat = (SAVED_LOCATION && SAVED_LOCATION.lat) ? SAVED_LOCATION.lat : DEFAULT_CENTER[0];
+  const startLng = (SAVED_LOCATION && SAVED_LOCATION.lng) ? SAVED_LOCATION.lng : DEFAULT_CENTER[1];
+  const startZoom = (SAVED_LOCATION && SAVED_LOCATION.lat) ? 15 : 12;
+
+  if (isModal) {
+    if (modalMap) { modalMap.remove(); modalMap = null; }
+    modalMap = L.map(mapEl).setView([startLat, startLng], startZoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OSM' }).addTo(modalMap);
+    
+    modalMarker = L.marker([startLat, startLng], { icon: createPinIcon(), draggable: true }).addTo(modalMap);
+    modalMarker.on('dragend', () => {
+      const pos = modalMarker.getLatLng();
+      setMapPickedLocation('modal', pos.lat, pos.lng, true, true);
+    });
+    modalMap.on('click', (e) => {
+      modalMarker.setLatLng(e.latlng);
+      setMapPickedLocation('modal', e.latlng.lat, e.latlng.lng, true, true);
+    });
+    setTimeout(() => modalMap.invalidateSize(), 200);
+  } else {
+    if (firstTimeMap) { firstTimeMap.remove(); firstTimeMap = null; }
+    firstTimeMap = L.map(mapEl).setView([startLat, startLng], startZoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OSM' }).addTo(firstTimeMap);
+    
+    firstTimeMarker = L.marker([startLat, startLng], { icon: createPinIcon(), draggable: true }).addTo(firstTimeMap);
+    firstTimeMarker.on('dragend', () => {
+      const pos = firstTimeMarker.getLatLng();
+      setMapPickedLocation('firstTime', pos.lat, pos.lng, true, true);
+    });
+    firstTimeMap.on('click', (e) => {
+      firstTimeMarker.setLatLng(e.latlng);
+      setMapPickedLocation('firstTime', e.latlng.lat, e.latlng.lng, true, true);
+    });
+    setTimeout(() => firstTimeMap.invalidateSize(), 200);
+  }
+}
+
+function setMapPickedLocation(context, lat, lng, doReverseGeocode = false, force = false) {
+  pickedCoords[context] = { lat, lng };
+  const coordsEl = document.getElementById(context === 'modal' ? 'modalCoordsDisplay' : 'firstTimeCoordsDisplay');
+  if (coordsEl) {
+    coordsEl.textContent = `${lat.toFixed(4)}°, ${lng.toFixed(4)}°`;
+  }
+
+  if (doReverseGeocode) {
+    reverseGeocodeToInputs(context, lat, lng, force);
+  }
+}
+
+async function reverseGeocodeToInputs(context, lat, lng, force = false) {
+  try {
+    const isModal = context === 'modal';
+    const areaIn = document.getElementById(isModal ? 'modal_area' : 'first_area');
+    const pinIn = document.getElementById(isModal ? 'modal_pincode' : 'first_pincode');
+    const addrIn = document.getElementById(isModal ? 'modal_address' : 'first_address');
+
+    let geo = null;
+    try {
+      const res = await fetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === 'ok') geo = data;
+      }
+    } catch(e) {}
+
+    if (!geo) {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1`;
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      if (res.ok) {
+        const data = await res.json();
+        const addr = data.address || {};
+        geo = {
+          area: addr.suburb || addr.neighbourhood || addr.village || addr.town || addr.city_district || addr.locality || addr.city || '',
+          pincode: addr.postcode || '',
+          address: [addr.road, addr.suburb, addr.city || addr.town].filter(Boolean).join(', ') || data.display_name || ''
+        };
+      }
+    }
+
+    if (geo) {
+      if (areaIn && geo.area) areaIn.value = geo.area;
+      if (pinIn) pinIn.value = geo.pincode || '';
+      if (addrIn) addrIn.value = geo.address || geo.area || '';
+
+      const statusEl = document.getElementById(isModal ? 'modalMapStatus' : 'firstTimeMapStatus');
+      if (statusEl && geo.area) {
+        statusEl.innerHTML = `<i class="bi bi-geo-alt-fill me-1" style="color:var(--brand-primary);"></i> Selected: <strong>${geo.area}</strong>${geo.pincode ? ' (' + geo.pincode + ')' : ''}`;
+      }
+    }
+  } catch (err) {
+    console.warn('Reverse geocode error:', err);
+  }
+}
+
+// Live geocode on typing
+function debounceLocateMap(context) {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    locateFromInputs(context, true);
+  }, 700);
+}
+
+async function locateFromInputs(context, silent = false) {
+  const isModal = context === 'modal';
+  const areaInput = document.getElementById(isModal ? 'modal_area' : 'first_area');
+  const pincodeInput = document.getElementById(isModal ? 'modal_pincode' : 'first_pincode');
+  const addressInput = document.getElementById(isModal ? 'modal_address' : 'first_address');
+  const statusEl = document.getElementById(isModal ? 'modalMapStatus' : 'firstTimeMapStatus');
+
+  const area = areaInput ? areaInput.value.trim() : '';
+  const pincode = pincodeInput ? pincodeInput.value.trim() : '';
+  const address = addressInput ? addressInput.value.trim() : '';
+
+  if (!area && !pincode) return;
+
+  if (statusEl) statusEl.textContent = 'Locating on map...';
+
+  try {
+    const res = await fetch(`/api/geocode?area=${encodeURIComponent(area)}&pincode=${encodeURIComponent(pincode)}&address=${encodeURIComponent(address)}`);
+    const data = await res.json();
+
+    if (res.ok && data.status === 'ok' && data.lat && data.lng) {
+      const lat = data.lat;
+      const lng = data.lng;
+
+      setMapPickedLocation(context, lat, lng, false);
+
+      const targetMap = isModal ? modalMap : firstTimeMap;
+      const targetMarker = isModal ? modalMarker : firstTimeMarker;
+
+      if (targetMap && targetMarker) {
+        targetMap.flyTo([lat, lng], 15, { duration: 1.0 });
+        targetMarker.setLatLng([lat, lng]);
+      }
+      if (statusEl) statusEl.innerHTML = `<i class="bi bi-geo-alt-fill me-1" style="color:var(--brand-primary);"></i> Located: ${data.display_name ? data.display_name.split(',')[0] : area}`;
+    } else {
+      if (statusEl && !silent) statusEl.textContent = 'Could not pinpoint place. You can tap on map directly.';
+    }
+  } catch (err) {
+    console.warn('Geocoding error:', err);
+    if (statusEl && !silent) statusEl.textContent = 'Could not reach geocoding service.';
+  }
+}
+
+function locateCurrentGPS(context) {
+  const isModal = context === 'modal';
+  const statusEl = document.getElementById(isModal ? 'modalMapStatus' : 'firstTimeMapStatus');
+  const btnEl = document.getElementById(isModal ? 'modalGpsBtn' : 'firstTimeGpsBtn');
+
+  if (!navigator.geolocation) {
+    alert('Geolocation is not supported by your browser.');
+    return;
+  }
+
+  if (statusEl) statusEl.textContent = 'Detecting current GPS location...';
+  if (btnEl) {
+    btnEl.disabled = true;
+    btnEl.innerHTML = '<i class="bi bi-arrow-repeat spin" style="display:inline-block; animation:spin 1s linear infinite;"></i> <span>Detecting Location...</span>';
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+
+      setMapPickedLocation(context, lat, lng, true, true);
+
+      const targetMap = isModal ? modalMap : firstTimeMap;
+      const targetMarker = isModal ? modalMarker : firstTimeMarker;
+
+      if (targetMap && targetMarker) {
+        targetMap.flyTo([lat, lng], 16, { duration: 1.0 });
+        targetMarker.setLatLng([lat, lng]);
+      }
+      if (statusEl) statusEl.innerHTML = '<i class="bi bi-geo-alt-fill me-1" style="color:var(--brand-primary);"></i> GPS Location detected &amp; pinned!';
+      if (btnEl) {
+        btnEl.disabled = false;
+        btnEl.innerHTML = '<i class="bi bi-check-circle-fill" style="font-size:0.95rem; color:#10B981;"></i> <span style="color:#10B981;">Location Detected!</span>';
+        setTimeout(() => {
+          btnEl.innerHTML = '<i class="bi bi-crosshair2" style="font-size:0.9rem; color:#2563EB;"></i> <span>Use My Current Location</span>';
+        }, 2500);
+      }
+    },
+    (err) => {
+      console.warn('GPS failed:', err);
+      if (statusEl) statusEl.textContent = 'GPS unavailable. Please tap on the map.';
+      if (btnEl) {
+        btnEl.disabled = false;
+        btnEl.innerHTML = '<i class="bi bi-crosshair2" style="font-size:0.9rem; color:#2563EB;"></i> <span>Use My Current Location</span>';
+      }
+    },
+    { timeout: 8000, enableHighAccuracy: true }
+  );
+}
+
+// Modal Controls
+function openEditLocationModal() {
+  const modal = document.getElementById('editLocationModal');
+  if (modal) {
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => {
+      initPickerMap('modal');
+    }, 150);
+  }
+}
+
+function closeEditLocationModal() {
+  const modal = document.getElementById('editLocationModal');
+  if (modal) {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+}
+
+window.addEventListener('click', function(event) {
+  const modal = document.getElementById('editLocationModal');
+  if (event.target === modal) {
+    closeEditLocationModal();
+  }
+});
+
+// Form Submission
+async function handleLocationSubmit(event, context) {
+  event.preventDefault();
+
+  const isModal = context === 'modal';
+  const areaInput = document.getElementById(isModal ? 'modal_area' : 'first_area');
+  const pincodeInput = document.getElementById(isModal ? 'modal_pincode' : 'first_pincode');
+  const addressInput = document.getElementById(isModal ? 'modal_address' : 'first_address');
+  const submitBtn = document.getElementById(isModal ? 'modalSubmitBtn' : 'firstTimeSubmitBtn');
+  const btnText = document.getElementById(isModal ? 'modalBtnText' : 'firstTimeBtnText');
+  const statusMsg = document.getElementById(isModal ? 'modalStatusMsg' : 'firstTimeStatusMsg');
+
+  const area = areaInput ? areaInput.value.trim() : '';
+  const pincode = pincodeInput ? pincodeInput.value.trim() : '';
+  const address = addressInput ? addressInput.value.trim() : '';
+
+  if (!area) {
+    showStatusMessage(statusMsg, 'Please enter your Area / Locality name.', 'error');
+    return;
+  }
+
+  if (!pincode) {
+    showStatusMessage(statusMsg, 'Please enter your PIN Code.', 'error');
+    return;
+  }
+
+  submitBtn.disabled = true;
+  const originalText = btnText.textContent;
+  btnText.textContent = 'Locating & Saving...';
+
+  const coords = pickedCoords[context];
+  const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+  const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+  try {
+    const response = await fetch('/api/user/location', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken
+      },
+      body: JSON.stringify({
+        area: area,
+        pincode: pincode,
+        address: address,
+        lat: coords.lat,
+        lng: coords.lng
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || data.error) {
+      throw new Error(data.error || 'Failed to save location.');
+    }
+
+    showStatusMessage(
+      statusMsg,
+      data.available
+        ? 'Location confirmed! Collector scheduled. Updating...'
+        : 'Location saved. ' + (data.availability_message || 'Collection service is currently not available in your area.'),
+      data.available ? 'success' : 'warning'
+    );
+
+    setTimeout(() => {
+      window.location.reload();
+    }, 700);
+
+  } catch (err) {
+    console.error('Location save error:', err);
+    showStatusMessage(statusMsg, err.message || 'Error saving location. Please try again.', 'error');
+    submitBtn.disabled = false;
+    btnText.textContent = originalText;
+  }
+}
+
+function showStatusMessage(element, text, type) {
+  if (!element) return;
+  element.style.display = 'block';
+  element.textContent = text;
+
+  if (type === 'success') {
+    element.style.background = 'rgba(16,185,129,0.12)';
+    element.style.color = '#065F46';
+    element.style.border = '1px solid rgba(16,185,129,0.3)';
+  } else if (type === 'warning') {
+    element.style.background = 'rgba(245,158,11,0.12)';
+    element.style.color = '#92400E';
+    element.style.border = '1px solid rgba(245,158,11,0.3)';
+  } else {
+    element.style.background = 'rgba(239,68,68,0.12)';
+    element.style.color = '#991B1B';
+    element.style.border = '1px solid rgba(239,68,68,0.3)';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initPreviewMap();
+  initPickerMap('firstTime');
+});
+</script>
+{% endblock %}

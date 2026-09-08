@@ -1,0 +1,12 @@
+Validation Loss: 0.1322
+Validation Accuracy: 0.9479
+
+              precision    recall  f1-score   support
+
+   Hazardous       0.92      0.96      0.94       132
+     Organic       0.99      0.90      0.95       280
+  Recyclable       0.92      1.00      0.95       222
+
+    accuracy                           0.95       634
+   macro avg       0.94      0.95      0.95       634
+weighted avg       0.95      0.95      0.95       634

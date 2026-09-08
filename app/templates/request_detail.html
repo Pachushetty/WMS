@@ -1,0 +1,490 @@
+{% extends "base.html" %}
+
+{% block title %}Request #REQ-{{ req.id }} &bull; EcoCycle AI{% endblock %}
+
+{% block content %}
+<div class="page-container" style="max-width: 960px; margin: 0 auto; padding-top: 24px; padding-bottom: 48px;">
+  <!-- Navigation / Breadcrumb -->
+  <div style="margin-bottom: 20px;">
+    <a href="{{ url_for('user_requests') }}" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+      <span>Back to All Requests</span>
+    </a>
+  </div>
+
+  <div class="request-item-card" id="req-detail-card-{{ req.id }}" style="box-shadow: var(--shadow-md); border-radius: var(--radius-xl); padding: 24px;">
+    <!-- Card Top Header -->
+    <div class="request-item-header" style="padding-bottom: 18px; border-bottom: 1px solid var(--border-subtle);">
+      <div class="request-item-title-group">
+        <div class="request-item-avatar" style="width: 48px; height: 48px; font-size: 1.5rem; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
+          {% if 'Hazard' in req.category %}<i class="bi bi-radioactive" style="color:var(--hazardous-color);"></i>{% elif 'Organic' in req.category %}<i class="bi bi-tree-fill" style="color:var(--organic-color);"></i>{% elif 'Recycl' in req.category %}<i class="bi bi-recycle" style="color:var(--brand-primary);"></i>{% else %}<i class="bi bi-box-seam" style="color:var(--text-muted);"></i>{% endif %}
+        </div>
+        <div>
+          <div class="request-item-object-row" style="gap: 10px;">
+            <h1 style="font-size: 1.35rem; font-weight: 800; color: var(--text-primary); margin: 0;">{{ req.object_name }}</h1>
+            <span class="badge badge-req-id" style="font-size: 0.8rem;">#REQ-{{ req.id }}</span>
+          </div>
+          <div class="request-item-meta" style="margin-top: 4px; gap: 8px;">
+            {% if 'Hazard' in req.category %}
+              <span class="badge" style="background:rgba(239,68,68,0.1); color:var(--hazardous-color); border:1px solid rgba(239,68,68,0.25);">Hazardous Waste</span>
+            {% elif 'Organic' in req.category %}
+              <span class="badge badge-organic">Organic Waste</span>
+            {% elif 'Recycl' in req.category %}
+              <span class="badge badge-primary">Recyclable Waste</span>
+            {% else %}
+              <span class="badge">{{ req.category }}</span>
+            {% endif %}
+            <span>&bull;</span>
+            <span>Requested: {{ req.created_at }}</span>
+            <span>&bull;</span>
+            <span style="font-family:var(--font-mono); font-size:0.75rem; color:var(--text-muted);">
+              GPS: {{ "%.4f"|format(req.user_lat) }}, {{ "%.4f"|format(req.user_lng) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        {% if req.status == 'Pending' %}
+          <span class="badge badge-warning" style="font-weight:700; padding: 6px 12px; font-size: 0.85rem;">
+            <span class="status-dot" style="background:#F59E0B;"></span>
+            Pending Review
+          </span>
+        {% elif req.status == 'Reviewed' %}
+          <span class="badge" style="background:rgba(59,130,246,0.1); color:#2563EB; border:1px solid rgba(59,130,246,0.25); font-weight:700; padding: 6px 12px; font-size: 0.85rem;">
+            <span class="status-dot" style="background:#2563EB;"></span>
+            Reviewed
+          </span>
+        {% elif req.status == 'Location Assigned' %}
+          <span class="badge badge-primary" style="font-weight:700; padding: 6px 12px; font-size: 0.85rem;">
+            <span class="status-dot"></span>
+            Location Assigned
+          </span>
+        {% elif req.status == 'Completed' %}
+          <span class="badge badge-organic" style="font-weight:700; padding: 6px 12px; font-size: 0.85rem;">
+            <span class="status-dot" style="background:#10B981;"></span>
+            Completed
+          </span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Lifecycle Stepper: Pending -> Reviewed -> Location Assigned -> Completed -->
+    <div class="stepper-track-container" style="margin: 28px 0 24px;">
+      {% set step_pct = 0 %}
+      {% if req.status == 'Reviewed' %}
+        {% set step_pct = 33.33 %}
+      {% elif req.status == 'Location Assigned' %}
+        {% set step_pct = 66.67 %}
+      {% elif req.status == 'Completed' %}
+        {% set step_pct = 100 %}
+      {% endif %}
+
+      <div class="stepper-progress-bar" style="width: calc((100% - 80px) * {{ step_pct / 100 }});"></div>
+
+      <div class="stepper-step active">
+        <div class="step-circle">1</div>
+        <div class="step-label">Pending</div>
+      </div>
+      <div class="stepper-step {{ 'active' if req.status in ['Reviewed', 'Location Assigned', 'Completed'] else '' }}">
+        <div class="step-circle">2</div>
+        <div class="step-label">Reviewed</div>
+      </div>
+      <div class="stepper-step {{ 'active' if req.status in ['Location Assigned', 'Completed'] else '' }}">
+        <div class="step-circle">3</div>
+        <div class="step-label">Location Assigned</div>
+      </div>
+      <div class="stepper-step {{ 'active' if req.status == 'Completed' else '' }}">
+        <div class="step-circle">4</div>
+        <div class="step-label">Completed</div>
+      </div>
+    </div>
+
+    <!-- Assigned Location & Map -->
+    {% if req.assigned_location_id and req.location_name %}
+      <div class="assigned-center-card" style="margin-top: 20px;">
+        <div class="assigned-center-header">
+          <div>
+            <span class="assigned-badge-label">RECOMMENDED DISPOSAL LOCATION</span>
+            <h2 class="assigned-center-name" style="font-size: 1.25rem; margin-top: 4px;">{{ req.location_name }}</h2>
+          </div>
+          {% if req.distance_km is not none %}
+            <span class="badge badge-primary" style="font-size: 0.85rem; padding: 6px 12px;">~{{ req.distance_km }} km away</span>
+          {% endif %}
+        </div>
+
+        <div class="assigned-details-grid" style="margin-top: 18px;">
+          <div class="assigned-detail-item">
+            <span class="assigned-detail-label">Address</span>
+            <span class="assigned-detail-val">{{ req.location_address }} ({{ req.location_city }})</span>
+          </div>
+          <div class="assigned-detail-item">
+            <span class="assigned-detail-label">Operating Hours</span>
+            <span class="assigned-detail-val">{{ req.location_hours or 'Standard Municipal Hours' }}</span>
+          </div>
+          <div class="assigned-detail-item">
+            <span class="assigned-detail-label">Contact</span>
+            <span class="assigned-detail-val">{{ req.location_phone or 'N/A' }}</span>
+          </div>
+          <div class="assigned-detail-item">
+            <span class="assigned-detail-label">Admin Instructions</span>
+            <span class="assigned-detail-val">{{ req.admin_notes or 'Please safely drop off specimen at facility reception.' }}</span>
+          </div>
+        </div>
+
+        <!-- Interactive Map Leaflet Container -->
+        <div class="request-map-box" style="margin-top: 20px; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--border-subtle); box-shadow: var(--shadow-sm);">
+          <div id="map-req-detail-{{ req.id }}" class="leaflet-map-instance" 
+               data-user-lat="{{ req.user_lat }}" 
+               data-user-lng="{{ req.user_lng }}" 
+               data-loc-lat="{{ req.location_lat }}" 
+               data-loc-lng="{{ req.location_lng }}" 
+               data-loc-name="{{ req.location_name }}" 
+               data-loc-category="{{ req.location_category or '' }}"
+               data-obj-name="{{ req.object_name }}"
+               style="width: 100%; height: 340px; background: #e2e8f0;"></div>
+        </div>
+
+        <!-- Other Nearby Facilities (3-4 nearest, for reference/comparison) -->
+        <div id="detailNearbyWrap" style="margin-top: 20px; display:none;">
+          <div style="font-size:0.82rem; font-weight:700; text-transform:uppercase; letter-spacing:0.02em; color:var(--text-muted); margin-bottom:10px;">
+            Other Nearby Facilities
+          </div>
+          <div id="detailNearbyList" style="display:grid; gap:10px;"></div>
+        </div>
+
+        <!-- Actions & Directions Link -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 20px; flex-wrap: wrap; gap: 14px; padding-top: 16px; border-top: 1px solid var(--border-subtle);">
+          <a href="https://www.google.com/maps/dir/?api=1&origin={{ req.user_lat }},{{ req.user_lng }}&destination={{ req.location_lat }},{{ req.location_lng }}" target="_blank" rel="noopener" class="btn btn-primary btn-md" style="background:linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+            </svg>
+            <span>Get Directions (Google Maps)</span>
+          </a>
+
+          {% if req.status != 'Completed' %}
+            <button type="button" class="btn btn-secondary btn-md" onclick="markDetailRequestCompleted({{ req.id }})" style="background: var(--bg-surface); border: 1px solid var(--border-default);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>Mark as Handed Over / Completed</span>
+            </button>
+          {% else %}
+            <div style="padding: 8px 16px; background: var(--organic-bg); border: 1px solid var(--organic-border); border-radius: var(--radius-md); color: var(--organic-text); font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>Disposal Completed</span>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% else %}
+      <!-- Pending / Under Review State -->
+      <div class="pending-review-banner" style="margin-top: 24px; padding: 24px;">
+        <div class="pending-spinner-box">
+          <div class="loading-spinner-ring" style="width: 28px; height: 28px; border-width: 3px;"></div>
+        </div>
+        <div style="flex:1;">
+          <h3 style="font-weight:700; font-size:1.05rem; color:var(--text-primary); margin:0 0 6px;">Awaiting Administrator Facility Assignment</h3>
+          <p style="font-size:0.9rem; color:var(--text-secondary); margin:0;">
+            Our logistics team is verifying the nearest certified {{ req.category.lower() }} facility matching your location. You will receive a notification as soon as the facility route is assigned.
+          </p>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Mark as Completed — Confirmation Modal -->
+<div id="completeConfirmOverlay" class="custom-modal-overlay delete-confirm-overlay" style="display:none;">
+  <div class="custom-modal-dialog delete-confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="completeConfirmTitle">
+    <div class="delete-confirm-body">
+      <div class="delete-confirm-icon confirm-action-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+      <h3 class="delete-confirm-title" id="completeConfirmTitle">Mark as handed over?</h3>
+      <p class="delete-confirm-desc">This confirms the disposal request has been completed and dropped off at the assigned facility.</p>
+    </div>
+    <div class="delete-confirm-actions">
+      <button type="button" class="btn-delete-cancel" id="completeConfirmCancelBtn">Cancel</button>
+      <button type="button" class="btn-confirm-action" id="completeConfirmOkBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span>Confirm</span>
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Maps a disposal-location category to the Bootstrap Icon class + brand color
+  // used to mark it on the map, matching the same categories/colors elsewhere.
+  function getFacilityMarkerMeta(category) {
+    const cat = (category || '').toLowerCase();
+    if (cat.includes('hazard')) {
+      return { iconClass: 'bi bi-radioactive', color: '#EF4444', label: 'Hazardous Waste Facility' };
+    }
+    if (cat.includes('organic')) {
+      return { iconClass: 'bi bi-tree-fill', color: '#10B981', label: 'Organic Waste Facility' };
+    }
+    if (cat.includes('recycl')) {
+      return { iconClass: 'bi bi-recycle', color: '#2563EB', label: 'Recycling Center' };
+    }
+    return { iconClass: 'bi bi-building', color: '#6B7280', label: 'Disposal Facility' };
+  }
+
+  function makeFacilityDivIcon(meta, size) {
+    size = size || 30;
+    const iconSize = Math.max(12, Math.round(size * 0.52));
+    return L.divIcon({
+      className: 'custom-map-center-pin',
+      html: `<div style="background:${meta.color}; width:${size}px; height:${size}px; border-radius:50%; border:3px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,0.35); display:flex; align-items:center; justify-content:center; color:#fff; font-size:${iconSize}px; line-height:1;"><i class="${meta.iconClass}"></i></div>`,
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2]
+    });
+  }
+
+  // Draws the "You are here" -> facility connector. Tries a real routed
+  // road path via OSRM's public routing API first (so the line follows
+  // actual roads); if that's unreachable, falls back to the previous
+  // straight dashed line so the map still shows a connection.
+  async function drawRouteOrFallback(map, userLat, userLng, destLat, destLng, color) {
+    try {
+      const url = `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${destLng},${destLat}?overview=full&geometries=geojson`;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const data = await res.json();
+        const coords = data && data.routes && data.routes[0] && data.routes[0].geometry && data.routes[0].geometry.coordinates;
+        if (coords && coords.length > 1) {
+          const latlngs = coords.map(([lng, lat]) => [lat, lng]);
+          const routeLine = L.polyline(latlngs, { color, weight: 4, opacity: 0.8 }).addTo(map);
+          try { map.fitBounds(routeLine.getBounds().pad(0.15)); } catch (e) { /* ignore */ }
+          return routeLine;
+        }
+      }
+    } catch (e) {
+      console.warn('Live route lookup unavailable, using straight-line fallback:', e.message);
+    }
+
+    return L.polyline([[userLat, userLng], [destLat, destLng]], {
+      color,
+      weight: 3,
+      opacity: 0.7,
+      dashArray: '6, 6'
+    }).addTo(map);
+  }
+
+  // Kept at module scope so the "Other Nearby Facilities" list (loaded
+  // separately, below) can pan the same map instance and drop a marker
+  // when a facility is clicked.
+  let detailMap = null;
+  let nearbyHighlightMarker = null;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('map-req-detail-{{ req.id }}');
+    if (!el) return;
+
+    const userLat = parseFloat(el.getAttribute('data-user-lat'));
+    const userLng = parseFloat(el.getAttribute('data-user-lng'));
+    const locLat = parseFloat(el.getAttribute('data-loc-lat'));
+    const locLng = parseFloat(el.getAttribute('data-loc-lng'));
+    const locName = el.getAttribute('data-loc-name') || 'Disposal Center';
+    const locCategory = el.getAttribute('data-loc-category') || '';
+    const objName = el.getAttribute('data-obj-name') || 'Waste Specimen';
+
+    if (!isNaN(userLat) && !isNaN(userLng) && !isNaN(locLat) && !isNaN(locLng)) {
+      try {
+        const map = L.map(el.id, { scrollWheelZoom: false }).setView([ (userLat + locLat) / 2, (userLng + locLng) / 2 ], 12);
+        detailMap = map;
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        const userIcon = L.divIcon({
+          className: 'custom-map-user-pin',
+          html: '<div style="background:#2563EB; width:24px; height:24px; border-radius:50%; border:3px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px;"><i class="bi bi-geo-alt-fill"></i></div>',
+          iconSize: [24, 24],
+          iconAnchor: [12, 12]
+        });
+
+        const assignedMeta = getFacilityMarkerMeta(locCategory);
+        const centerIcon = makeFacilityDivIcon(assignedMeta, 30);
+
+        L.marker([userLat, userLng], { icon: userIcon })
+          .addTo(map)
+          .bindPopup(`<strong><i class="bi bi-geo-alt-fill" style="color:#2563EB;"></i> You are here</strong><br>${objName}`)
+          .openPopup();
+
+        L.marker([locLat, locLng], { icon: centerIcon })
+          .addTo(map)
+          .bindPopup(`<strong><i class="${assignedMeta.iconClass}" style="color:${assignedMeta.color};"></i> ${locName}</strong><br>${assignedMeta.label} &bull; Certified Disposal Facility`);
+
+        map.fitBounds([[userLat, userLng], [locLat, locLng]], { padding: [40, 40] });
+
+        drawRouteOrFallback(map, userLat, userLng, locLat, locLng, assignedMeta.color);
+      } catch (e) {
+        console.warn('Map render error:', e);
+      }
+    }
+  });
+
+  // Pans the map to a nearby facility and drops a highlighted marker for
+  // it, so clicking an item in the list shows exactly where it is —
+  // mirroring the assigned-facility pin already on the map.
+  function focusNearbyFacility(lat, lng, name, category, itemEl) {
+    if (!detailMap) return;
+
+    if (nearbyHighlightMarker) {
+      detailMap.removeLayer(nearbyHighlightMarker);
+      nearbyHighlightMarker = null;
+    }
+
+    const meta = getFacilityMarkerMeta(category);
+    const nearbyIcon = makeFacilityDivIcon(meta, 28);
+
+    nearbyHighlightMarker = L.marker([lat, lng], { icon: nearbyIcon })
+      .addTo(detailMap)
+      .bindPopup(`<strong><i class="${meta.iconClass}" style="color:${meta.color};"></i> ${name}</strong><br>${meta.label}`)
+      .openPopup();
+
+    detailMap.flyTo([lat, lng], 15, { duration: 0.75 });
+
+    document.querySelectorAll('#detailNearbyList .nearby-facility-item').forEach(node => {
+      node.style.borderColor = 'var(--border-subtle)';
+      node.style.background = 'var(--bg-surface-subtle)';
+    });
+    if (itemEl) {
+      itemEl.style.borderColor = meta.color;
+      itemEl.style.background = 'rgba(0, 0, 0, 0.03)';
+    }
+
+    const mapBox = document.querySelector('.request-map-box');
+    if (mapBox) mapBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // --- Load a few nearby alternative facilities for comparison, and plot
+  // each one on the map with its own category icon (not just on click). ---
+  (async function loadNearbyFacilities() {
+    const wrap = document.getElementById('detailNearbyWrap');
+    const list = document.getElementById('detailNearbyList');
+    if (!wrap || !list) return;
+
+    try {
+      const res = await fetch('/api/disposal/request/{{ req.id }}/nearby');
+      const data = await res.json();
+      if (!res.ok) return;
+
+      const assignedLocId = {{ req.assigned_location_id if req.assigned_location_id else 'null' }};
+      const others = (data.nearby_locations || []).filter(loc => loc.id !== assignedLocId).slice(0, 3);
+      if (others.length === 0) return;
+
+      list.innerHTML = '';
+      others.forEach(loc => {
+        const meta = getFacilityMarkerMeta(loc.category);
+
+        // Plot it on the map right away (small, category-colored pin) so
+        // the map shows the full picture, not just the assigned facility.
+        if (detailMap && loc.latitude != null && loc.longitude != null) {
+          const icon = makeFacilityDivIcon(meta, 22);
+          const marker = L.marker([loc.latitude, loc.longitude], { icon, opacity: 0.85 }).addTo(detailMap);
+          marker.bindPopup(`<strong><i class="${meta.iconClass}" style="color:${meta.color};"></i> ${loc.name}</strong><br>${meta.label}${loc.distance_km != null ? ` &bull; ${loc.distance_km} km away` : ''}`);
+        }
+
+        const item = document.createElement('div');
+        item.className = 'nearby-facility-item';
+        item.style.cssText = 'display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; border:1px solid var(--border-subtle); border-radius:10px; background:var(--bg-surface-subtle); cursor:pointer; transition: border-color 0.15s ease, background 0.15s ease;';
+        item.title = 'Click to show this facility on the map';
+        const matchTag = loc.is_category_match ? '<span style="color:#2563EB; font-weight:700;"><i class="bi bi-star-fill" style="font-size:0.75rem;"></i> Compatible</span> &bull; ' : '';
+        const directionsUrl = `https://www.google.com/maps/dir/?api=1&origin={{ req.user_lat }},{{ req.user_lng }}&destination=${loc.latitude},${loc.longitude}`;
+        item.innerHTML = `
+          <div style="min-width:0;">
+            <div style="font-weight:700; font-size:0.88rem; color:var(--text-primary);"><i class="${meta.iconClass}" style="color:${meta.color}; margin-right:5px;"></i>${loc.name}</div>
+            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">${matchTag}${loc.distance_km} km away &bull; ${loc.address || ''}</div>
+          </div>
+          <a href="${directionsUrl}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm" style="flex-shrink:0; padding:6px 12px; font-size:0.78rem;">Directions</a>
+        `;
+        // Clicking anywhere on the card (except the "Directions" link
+        // itself, which opens Google Maps in a new tab) shows the
+        // facility on the map above, the same way the assigned facility
+        // and "Your Location" pins are already shown.
+        item.addEventListener('click', (e) => {
+          if (e.target.closest('a')) return;
+          focusNearbyFacility(loc.latitude, loc.longitude, loc.name, loc.category, item);
+        });
+        list.appendChild(item);
+      });
+      wrap.style.display = 'block';
+    } catch (err) {
+      console.warn('Nearby facilities fetch error:', err);
+    }
+  })();
+
+  function markDetailRequestCompleted(requestId) {
+    openCompleteConfirmModal(async () => {
+      const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+      const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+      try {
+        const res = await fetch(`/api/disposal/request/${requestId}/complete`, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': csrfToken }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Unable to update status.');
+        window.location.reload();
+      } catch (err) {
+        alert(err.message || 'Error completing request.');
+      }
+    });
+  }
+
+  // Custom "Mark as handed over?" confirmation modal — replaces the native
+  // browser confirm() popup with a styled in-app dialog.
+  const completeConfirmOverlay = document.getElementById('completeConfirmOverlay');
+  const completeConfirmCancelBtn = document.getElementById('completeConfirmCancelBtn');
+  const completeConfirmOkBtn = document.getElementById('completeConfirmOkBtn');
+  let pendingCompleteAction = null;
+
+  function openCompleteConfirmModal(onConfirm) {
+    pendingCompleteAction = onConfirm;
+    completeConfirmOverlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeCompleteConfirmModal() {
+    completeConfirmOverlay.style.display = 'none';
+    document.body.style.overflow = '';
+    pendingCompleteAction = null;
+  }
+
+  if (completeConfirmOverlay) {
+    completeConfirmCancelBtn.addEventListener('click', closeCompleteConfirmModal);
+    completeConfirmOverlay.addEventListener('click', (e) => {
+      if (e.target === completeConfirmOverlay) closeCompleteConfirmModal();
+    });
+    completeConfirmOkBtn.addEventListener('click', () => {
+      const action = pendingCompleteAction;
+      closeCompleteConfirmModal();
+      if (action) action();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && completeConfirmOverlay.style.display === 'flex') closeCompleteConfirmModal();
+    });
+  }
+</script>
+{% endblock %}
