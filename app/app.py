@@ -62,8 +62,16 @@ from werkzeug.utils import secure_filename
 
 import numpy as np
 from PIL import Image, UnidentifiedImageError
-from tensorflow.keras.models import load_model
-from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+try:
+    # tf-keras shim: keeps the old tf.keras API working alongside Keras 3.x.
+    # This prevents the 'str' object has no attribute 'as_list' error which
+    # occurs when a model saved with TF 2.x is loaded under Keras 3.x.
+    import tf_keras as _tf_keras  # noqa: F401
+    from tf_keras.models import load_model
+    from tf_keras.applications.mobilenet_v2 import preprocess_input
+except ImportError:
+    from tensorflow.keras.models import load_model
+    from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 
 from groq import Groq
 
