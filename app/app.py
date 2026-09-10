@@ -62,16 +62,8 @@ from werkzeug.utils import secure_filename
 
 import numpy as np
 from PIL import Image, UnidentifiedImageError
-try:
-    # tf-keras shim: keeps the old tf.keras API working alongside Keras 3.x.
-    # This prevents the 'str' object has no attribute 'as_list' error which
-    # occurs when a model saved with TF 2.x is loaded under Keras 3.x.
-    import tf_keras as _tf_keras  # noqa: F401
-    from tf_keras.models import load_model
-    from tf_keras.applications.mobilenet_v2 import preprocess_input
-except ImportError:
-    from tensorflow.keras.models import load_model
-    from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+from tensorflow.keras.models import load_model
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 
 from groq import Groq
 
@@ -1106,6 +1098,11 @@ def analyze_image_groq(image_path: Path, max_retries: int = 2, retry_delay_secon
                 temperature=0.1,
                 max_completion_tokens=600,
                 reasoning_effort="none",
+                timeout=20,  # hard cap per attempt so a stalled call fails fast
+                              # instead of hanging until gunicorn's worker timeout
+                              # kills the whole request (which drops the
+                              # connection and surfaces as a generic frontend
+                              # "could not communicate with backend" error)
             )
 
             raw = (completion.choices[0].message.content or "").strip()
