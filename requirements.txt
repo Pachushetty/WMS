@@ -1,10 +1,8 @@
-tensorflow==2.18.1
+tensorflow-cpu==2.18.1
 Pillow
-numpy<2.0
-matplotlib
-scikit-learn
+numpy
 flask
+gunicorn
 groq
 python-dotenv
 psycopg2-binary
-gunicorn
