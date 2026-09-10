@@ -961,6 +961,25 @@ else:
     )
     print("WARNING:", groq_load_error)
 
+# --- Gemini vision model: fallback provider used only if Groq fails ---
+# Called over plain HTTPS (no extra SDK dependency needed) so it stays
+# lightweight — we already depend on `requests`.
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+# "gemini-flash-latest" is a Google-maintained alias that always points at
+# the current fast Gemini model, so this doesn't need to be hand-updated
+# every time a specific dated model is deprecated.
+GEMINI_VISION_MODEL = os.environ.get("GEMINI_VISION_MODEL", "gemini-flash-latest")
+GEMINI_ENDPOINT = (
+    f"https://generativelanguage.googleapis.com/v1beta/models/"
+    f"{GEMINI_VISION_MODEL}:generateContent"
+)
+
+if not GEMINI_API_KEY:
+    print(
+        "WARNING: GEMINI_API_KEY environment variable not set. "
+        "Groq-outage fallback to Gemini will be skipped."
+    )
+
 
 def allowed_file(filename: str) -> bool:
     return (
@@ -997,17 +1016,137 @@ class GroqAnalysisUnavailable(Exception):
     pass
 
 
+class GeminiAnalysisUnavailable(Exception):
+    """Same idea as GroqAnalysisUnavailable, but for the Gemini fallback path."""
+    pass
+
+
+class AllProvidersUnavailable(Exception):
+    """
+    Raised only when EVERY vision provider (Groq, then Gemini, then Groq
+    again) has been tried and failed. /predict treats this exactly like
+    GroqAnalysisUnavailable used to be treated: surface a 503 instead of
+    silently falling back to CNN-only classification.
+    """
+    pass
+
+
+def _parse_vision_analysis_json(raw: str) -> dict:
+    """
+    Shared response cleanup/parsing used by both analyze_image_groq and
+    analyze_image_gemini, since both providers are prompted for the exact
+    same JSON shape. Raises if the text can't be parsed as the expected
+    object, so callers can treat that the same as any other provider
+    failure (and retry / fall back to the next provider).
+    """
+    # Defensive: strip <think>...</think> if present
+    if "<think>" in raw and "</think>" in raw:
+        raw = raw.split("</think>", 1)[1].strip()
+
+    if raw.startswith("```"):
+        raw = raw.strip("`")
+        if raw.lower().startswith("json"):
+            raw = raw[4:]
+        raw = raw.strip()
+
+    start = raw.find("{")
+    end = raw.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        raw = raw[start:end + 1]
+
+    data = json.loads(raw)
+
+    obj = str(data.get("object", "Object")).strip()
+    cond = str(data.get("condition", "Unknown")).strip()
+    is_waste = data.get("is_waste")
+    if not isinstance(is_waste, bool):
+        is_waste = True if str(is_waste).lower() in ["true", "yes", "1"] else False
+    cat = str(data.get("category", "General Material")).strip()
+    reason = str(data.get("reason", "")).strip()
+
+    warning = str(data.get("warning", "")).strip()
+    raw_instructions = data.get("instructions")
+    instructions = []
+    if isinstance(raw_instructions, list):
+        instructions = [str(x).strip() for x in raw_instructions if str(x).strip()]
+
+    return {
+        "object": obj,
+        "condition": cond,
+        "is_waste": is_waste,
+        "category": cat,
+        "reason": reason,
+        "warning": warning,
+        "instructions": instructions,
+    }
+
+
+VISION_ANALYSIS_PROMPT = (
+    "You are an AI image-classification system for a waste-management application.\n"
+    "Your job is NOT only to decide whether an item is waste. You must also identify what the item is and what category/material it belongs to.\n\n"
+    "Follow this decision process exactly:\n\n"
+    "STEP 1 — IDENTIFY THE OBJECT\n"
+    "Look at the uploaded image and identify the main object clearly.\n\n"
+    "STEP 2 — CHECK FOR HUMAN OR ANIMAL\n"
+    "If the image contains a human or an animal as the main subject:\n"
+    "- is_waste: false\n"
+    "- object: \"Human\" or \"Animal\" (or specific name, e.g. \"Person\", \"Dog\", \"Cat\")\n"
+    "- condition: \"Living\"\n"
+    "- category: \"Human/Animal\"\n"
+    "- reason: \"The image contains a living human/animal, which is not waste.\"\n"
+    "STOP processing. Do NOT classify a human or animal as Organic, Recyclable, or Hazardous.\n\n"
+    "STEP 3 — FOR ALL OTHER OBJECTS\n"
+    "If the image contains an object, DO NOT stop just because the object is not waste.\n"
+    "First identify:\n"
+    "- object: name of the object (e.g. \"Banana\", \"Plastic Bottle\", \"Battery\", \"Cardboard Box\", \"Carrot\", \"Aluminum Can\")\n"
+    "- condition: visible condition (e.g. \"Fresh\", \"New\", \"Used\", \"Rotten\", \"Damaged\", \"Empty\", \"Broken\", \"Discarded\", \"Spoiled\", \"Used/Discarded\")\n\n"
+    "STEP 4 — DETERMINE WHETHER IT IS WASTE\n"
+    "Decide whether the object is actually waste based on its visible condition and context.\n"
+    "IMPORTANT: An object can belong to an organic, recyclable, or hazardous MATERIAL category even when it is NOT waste.\n"
+    "- A fresh banana is organic material but is not waste.\n"
+    "- A new plastic bottle is recyclable material but is not waste.\n"
+    "- A new battery is a hazardous material but is not waste.\n\n"
+    "STEP 5 — CLASSIFY THE CATEGORY\n"
+    "If the object IS WASTE (is_waste: true), classify category as exactly one of:\n"
+    "- \"Organic Waste\"\n"
+    "- \"Recyclable Waste\"\n"
+    "- \"Hazardous Waste\"\n\n"
+    "If the object IS NOT WASTE (is_waste: false), classify what type of material/category it belongs to (e.g. \"Food / Organic Material\", \"Plastic / Recyclable Material\", \"Paper/Cardboard / Recyclable Material\", \"Battery / Hazardous Material\", \"Glass / Recyclable Material\", \"Metal / Recyclable Material\", etc.).\n\n"
+    "STEP 6 — DO NOT CONFUSE MATERIAL WITH WASTE\n"
+    "- Fresh banana -> object: \"Banana\", condition: \"Fresh\", is_waste: false, category: \"Food / Organic Material\", reason: \"Fresh edible fruit, currently usable food not waste.\"\n"
+    "- Rotten banana -> object: \"Banana\", condition: \"Rotten\", is_waste: true, category: \"Organic Waste\", reason: \"Decomposed fruit unfit for consumption, suitable for composting.\"\n"
+    "- Banana peel -> object: \"Banana Peel\", condition: \"Used/Discarded\", is_waste: true, category: \"Organic Waste\", reason: \"Discarded fruit peel suitable for composting.\"\n"
+    "- New plastic bottle -> object: \"Plastic Bottle\", condition: \"New\", is_waste: false, category: \"Plastic / Recyclable Material\", reason: \"New intact bottle, not discarded waste.\"\n"
+    "- Discarded plastic bottle -> object: \"Plastic Bottle\", condition: \"Used/Discarded\", is_waste: true, category: \"Recyclable Waste\", reason: \"Empty used plastic container suitable for recycling.\"\n"
+    "- Battery (used/discarded) -> object: \"Battery\", condition: \"Used/Discarded\", is_waste: true, category: \"Hazardous Waste\", reason: \"Contains hazardous chemicals requiring safe e-waste disposal.\"\n\n"
+    "STEP 7 — ACTIONABLE DISPOSAL / HANDLING PROTOCOL\n"
+    "Generate an item-specific actionable disposal or handling protocol tailored DIRECTLY to the detected object:\n"
+    "- warning: A concise 1-sentence safety or disposal warning specific to this exact item.\n"
+    "- instructions: An array of exactly 3 to 4 concise, actionable, step-by-step instructions for disposing or handling this specific item.\n"
+    "Do NOT give generic instructions. The warning and instructions must directly address the identified object.\n\n"
+    "STEP 8 — FINAL RESPONSE\n"
+    "Respond with ONLY a JSON object on a single line of the exact format:\n"
+    "{\"object\": \"...\", \"condition\": \"...\", \"is_waste\": true/false, \"category\": \"...\", \"reason\": \"...\", \"warning\": \"...\", \"instructions\": [\"...\", \"...\", \"...\", \"...\"]}\n"
+    "Do not include markdown code fences, backticks, or any other text before or after the JSON."
+)
+
+
+def _load_image_as_base64(image_path: Path) -> tuple[str, str]:
+    """Returns (base64_data, normalized_extension) for embedding in a vision API call."""
+    with open(image_path, "rb") as f:
+        b64_image = base64.b64encode(f.read()).decode("utf-8")
+    ext = image_path.suffix.lower().lstrip(".") or "jpeg"
+    if ext == "jpg":
+        ext = "jpeg"
+    return b64_image, ext
+
+
 def analyze_image_groq(image_path: Path, max_retries: int = 2, retry_delay_seconds: float = 0.8):
     """
-    Executes the 7-step waste & material identification decision process:
-      STEP 1: Identify the main object.
-      STEP 2: Check for Human or Animal -> Is Waste: No, Category: Human/Animal, STOP.
-      STEP 3: For all other objects, identify Object and Condition (Fresh, New, Used, Rotten, Damaged, Discarded, etc.).
-      STEP 4: Determine whether it is actually waste based on condition/context.
-      STEP 5: If Waste -> Organic Waste / Recyclable Waste / Hazardous Waste.
-              If Not Waste -> Food / Organic Material, Plastic / Recyclable Material, Battery / Hazardous Material, etc.
-      STEP 6: Separate Material Category from Waste Category.
-      STEP 7: Return JSON: {object, condition, is_waste, category, reason}.
+    Executes the 7-step waste & material identification decision process
+    using Groq's vision model. See VISION_ANALYSIS_PROMPT for the exact
+    instructions (shared with the Gemini fallback in analyze_image_gemini,
+    so both providers are held to the same output contract).
 
     Retries transient failures (e.g. connection errors) up to `max_retries`
     times with a short backoff before giving up. If every attempt fails,
@@ -1018,62 +1157,8 @@ def analyze_image_groq(image_path: Path, max_retries: int = 2, retry_delay_secon
         print("Groq image analysis skipped: groq_client is None (GROQ_API_KEY missing or invalid).")
         return None
 
-    prompt = (
-        "You are an AI image-classification system for a waste-management application.\n"
-        "Your job is NOT only to decide whether an item is waste. You must also identify what the item is and what category/material it belongs to.\n\n"
-        "Follow this decision process exactly:\n\n"
-        "STEP 1 — IDENTIFY THE OBJECT\n"
-        "Look at the uploaded image and identify the main object clearly.\n\n"
-        "STEP 2 — CHECK FOR HUMAN OR ANIMAL\n"
-        "If the image contains a human or an animal as the main subject:\n"
-        "- is_waste: false\n"
-        "- object: \"Human\" or \"Animal\" (or specific name, e.g. \"Person\", \"Dog\", \"Cat\")\n"
-        "- condition: \"Living\"\n"
-        "- category: \"Human/Animal\"\n"
-        "- reason: \"The image contains a living human/animal, which is not waste.\"\n"
-        "STOP processing. Do NOT classify a human or animal as Organic, Recyclable, or Hazardous.\n\n"
-        "STEP 3 — FOR ALL OTHER OBJECTS\n"
-        "If the image contains an object, DO NOT stop just because the object is not waste.\n"
-        "First identify:\n"
-        "- object: name of the object (e.g. \"Banana\", \"Plastic Bottle\", \"Battery\", \"Cardboard Box\", \"Carrot\", \"Aluminum Can\")\n"
-        "- condition: visible condition (e.g. \"Fresh\", \"New\", \"Used\", \"Rotten\", \"Damaged\", \"Empty\", \"Broken\", \"Discarded\", \"Spoiled\", \"Used/Discarded\")\n\n"
-        "STEP 4 — DETERMINE WHETHER IT IS WASTE\n"
-        "Decide whether the object is actually waste based on its visible condition and context.\n"
-        "IMPORTANT: An object can belong to an organic, recyclable, or hazardous MATERIAL category even when it is NOT waste.\n"
-        "- A fresh banana is organic material but is not waste.\n"
-        "- A new plastic bottle is recyclable material but is not waste.\n"
-        "- A new battery is a hazardous material but is not waste.\n\n"
-        "STEP 5 — CLASSIFY THE CATEGORY\n"
-        "If the object IS WASTE (is_waste: true), classify category as exactly one of:\n"
-        "- \"Organic Waste\"\n"
-        "- \"Recyclable Waste\"\n"
-        "- \"Hazardous Waste\"\n\n"
-        "If the object IS NOT WASTE (is_waste: false), classify what type of material/category it belongs to (e.g. \"Food / Organic Material\", \"Plastic / Recyclable Material\", \"Paper/Cardboard / Recyclable Material\", \"Battery / Hazardous Material\", \"Glass / Recyclable Material\", \"Metal / Recyclable Material\", etc.).\n\n"
-        "STEP 6 — DO NOT CONFUSE MATERIAL WITH WASTE\n"
-        "- Fresh banana -> object: \"Banana\", condition: \"Fresh\", is_waste: false, category: \"Food / Organic Material\", reason: \"Fresh edible fruit, currently usable food not waste.\"\n"
-        "- Rotten banana -> object: \"Banana\", condition: \"Rotten\", is_waste: true, category: \"Organic Waste\", reason: \"Decomposed fruit unfit for consumption, suitable for composting.\"\n"
-        "- Banana peel -> object: \"Banana Peel\", condition: \"Used/Discarded\", is_waste: true, category: \"Organic Waste\", reason: \"Discarded fruit peel suitable for composting.\"\n"
-        "- New plastic bottle -> object: \"Plastic Bottle\", condition: \"New\", is_waste: false, category: \"Plastic / Recyclable Material\", reason: \"New intact bottle, not discarded waste.\"\n"
-        "- Discarded plastic bottle -> object: \"Plastic Bottle\", condition: \"Used/Discarded\", is_waste: true, category: \"Recyclable Waste\", reason: \"Empty used plastic container suitable for recycling.\"\n"
-        "- Battery (used/discarded) -> object: \"Battery\", condition: \"Used/Discarded\", is_waste: true, category: \"Hazardous Waste\", reason: \"Contains hazardous chemicals requiring safe e-waste disposal.\"\n\n"
-        "STEP 7 — ACTIONABLE DISPOSAL / HANDLING PROTOCOL\n"
-        "Generate an item-specific actionable disposal or handling protocol tailored DIRECTLY to the detected object:\n"
-        "- warning: A concise 1-sentence safety or disposal warning specific to this exact item.\n"
-        "- instructions: An array of exactly 3 to 4 concise, actionable, step-by-step instructions for disposing or handling this specific item.\n"
-        "Do NOT give generic instructions. The warning and instructions must directly address the identified object.\n\n"
-        "STEP 8 — FINAL RESPONSE\n"
-        "Respond with ONLY a JSON object on a single line of the exact format:\n"
-        "{\"object\": \"...\", \"condition\": \"...\", \"is_waste\": true/false, \"category\": \"...\", \"reason\": \"...\", \"warning\": \"...\", \"instructions\": [\"...\", \"...\", \"...\", \"...\"]}\n"
-        "Do not include markdown code fences, backticks, or any other text before or after the JSON."
-    )
-
     try:
-        with open(image_path, "rb") as f:
-            b64_image = base64.b64encode(f.read()).decode("utf-8")
-
-        ext = image_path.suffix.lower().lstrip(".") or "jpeg"
-        if ext == "jpg":
-            ext = "jpeg"
+        b64_image, ext = _load_image_as_base64(image_path)
     except Exception as exc:  # noqa: BLE001 - reading/encoding the file failed, not a connection issue
         print("Groq image analysis failed (could not read image file):", exc)
         return None
@@ -1087,7 +1172,7 @@ def analyze_image_groq(image_path: Path, max_retries: int = 2, retry_delay_secon
                     {
                         "role": "user",
                         "content": [
-                            {"type": "text", "text": prompt},
+                            {"type": "text", "text": VISION_ANALYSIS_PROMPT},
                             {
                                 "type": "image_url",
                                 "image_url": {"url": f"data:image/{ext};base64,{b64_image}"},
@@ -1108,46 +1193,7 @@ def analyze_image_groq(image_path: Path, max_retries: int = 2, retry_delay_secon
             raw = (completion.choices[0].message.content or "").strip()
             print(f"Groq raw response (attempt {attempt}):", repr(raw))
 
-            # Defensive: strip <think>...</think> if present
-            if "<think>" in raw and "</think>" in raw:
-                raw = raw.split("</think>", 1)[1].strip()
-
-            if raw.startswith("```"):
-                raw = raw.strip("`")
-                if raw.lower().startswith("json"):
-                    raw = raw[4:]
-                raw = raw.strip()
-
-            start = raw.find("{")
-            end = raw.rfind("}")
-            if start != -1 and end != -1 and end > start:
-                raw = raw[start:end + 1]
-
-            data = json.loads(raw)
-
-            obj = str(data.get("object", "Object")).strip()
-            cond = str(data.get("condition", "Unknown")).strip()
-            is_waste = data.get("is_waste")
-            if not isinstance(is_waste, bool):
-                is_waste = True if str(is_waste).lower() in ["true", "yes", "1"] else False
-            cat = str(data.get("category", "General Material")).strip()
-            reason = str(data.get("reason", "")).strip()
-
-            warning = str(data.get("warning", "")).strip()
-            raw_instructions = data.get("instructions")
-            instructions = []
-            if isinstance(raw_instructions, list):
-                instructions = [str(x).strip() for x in raw_instructions if str(x).strip()]
-
-            result = {
-                "object": obj,
-                "condition": cond,
-                "is_waste": is_waste,
-                "category": cat,
-                "reason": reason,
-                "warning": warning,
-                "instructions": instructions,
-            }
+            result = _parse_vision_analysis_json(raw)
             print("Groq parsed result:", result)
             return result
         except Exception as exc:  # noqa: BLE001
@@ -1161,6 +1207,127 @@ def analyze_image_groq(image_path: Path, max_retries: int = 2, retry_delay_secon
     # raise instead of quietly falling back to the CNN-only path.
     print("Groq image analysis failed after", max_retries + 1, "attempts:", last_error)
     raise GroqAnalysisUnavailable(str(last_error))
+
+
+def analyze_image_gemini(image_path: Path, max_retries: int = 1, retry_delay_seconds: float = 0.6):
+    """
+    Same 7-step decision process as analyze_image_groq, but called against
+    Gemini's REST API instead. This exists purely as a fallback for when
+    Groq is unreachable/erroring — see analyze_image_multi_provider below
+    for how the two are combined.
+
+    Uses urllib.request (already used elsewhere in this file) rather than
+    adding a new HTTP client dependency.
+    """
+    if not GEMINI_API_KEY:
+        print("Gemini image analysis skipped: GEMINI_API_KEY not set.")
+        return None
+
+    try:
+        b64_image, ext = _load_image_as_base64(image_path)
+    except Exception as exc:  # noqa: BLE001
+        print("Gemini image analysis failed (could not read image file):", exc)
+        return None
+
+    mime_type = f"image/{ext}"
+    payload = json.dumps({
+        "contents": [{
+            "parts": [
+                {"text": VISION_ANALYSIS_PROMPT},
+                {"inline_data": {"mime_type": mime_type, "data": b64_image}},
+            ]
+        }],
+        "generationConfig": {
+            "temperature": 0.1,
+            "maxOutputTokens": 600,
+        },
+    }).encode("utf-8")
+
+    last_error = None
+    for attempt in range(1, max_retries + 2):
+        try:
+            req = urllib.request.Request(
+                f"{GEMINI_ENDPOINT}?key={GEMINI_API_KEY}",
+                data=payload,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            # Hard cap per attempt for the same reason as Groq's timeout=20
+            # above: fail fast instead of risking gunicorn's worker timeout
+            # killing the whole request.
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                body = json.loads(resp.read().decode("utf-8"))
+
+            raw = (
+                body.get("candidates", [{}])[0]
+                .get("content", {})
+                .get("parts", [{}])[0]
+                .get("text", "")
+            ).strip()
+            print(f"Gemini raw response (attempt {attempt}):", repr(raw))
+
+            result = _parse_vision_analysis_json(raw)
+            print("Gemini parsed result:", result)
+            return result
+        except Exception as exc:  # noqa: BLE001
+            last_error = exc
+            print(f"Gemini image analysis attempt {attempt} failed:", exc)
+            if attempt <= max_retries:
+                time.sleep(retry_delay_seconds * attempt)
+
+    print("Gemini image analysis failed after", max_retries + 1, "attempts:", last_error)
+    raise GeminiAnalysisUnavailable(str(last_error))
+
+
+def analyze_image_multi_provider(image_path: Path):
+    """
+    Provider fallback chain, in order: Groq -> Gemini -> Groq (one last
+    retry), matching the requested behavior of "if one fails, try the
+    other, and if that also fails, go back to the first one before giving
+    up." Each individual attempt uses a small max_retries so the combined
+    worst case still comfortably fits inside gunicorn's --timeout.
+
+    Returns the same dict shape as analyze_image_groq / analyze_image_gemini,
+    or None if neither provider is configured at all (falls back to
+    CNN-only classification, same as the original single-provider
+    behavior). Raises AllProvidersUnavailable only if both providers are
+    configured but every attempt across both still failed.
+    """
+    if groq_client is None and not GEMINI_API_KEY:
+        # Neither provider configured — this is an intentional degraded
+        # deployment, not a runtime failure, so behave like the original
+        # analyze_image_groq did when GROQ_API_KEY was unset.
+        return None
+
+    errors = []
+
+    # 1) Groq first (primary provider).
+    try:
+        result = analyze_image_groq(image_path, max_retries=1, retry_delay_seconds=0.6)
+        if result is not None:
+            return result
+    except GroqAnalysisUnavailable as exc:
+        print("Provider fallback: Groq failed, trying Gemini next:", exc)
+        errors.append(f"Groq: {exc}")
+
+    # 2) Gemini fallback.
+    try:
+        result = analyze_image_gemini(image_path, max_retries=1, retry_delay_seconds=0.6)
+        if result is not None:
+            return result
+    except GeminiAnalysisUnavailable as exc:
+        print("Provider fallback: Gemini also failed, retrying Groq once more:", exc)
+        errors.append(f"Gemini: {exc}")
+
+    # 3) Back to Groq for one final attempt before giving up entirely.
+    try:
+        result = analyze_image_groq(image_path, max_retries=0, retry_delay_seconds=0)
+        if result is not None:
+            return result
+    except GroqAnalysisUnavailable as exc:
+        errors.append(f"Groq (final retry): {exc}")
+
+    raise AllProvidersUnavailable(" | ".join(errors) if errors else "Unknown error")
 
 
 # ---------------------------------------------------------------------------
@@ -2450,17 +2617,17 @@ def predict():
         print("Image preprocessing error:", exc)
         return jsonify({"error": "Could not process the uploaded image."}), 400
 
-    # 4. Groq Vision Multi-Step Evaluation
+    # 4. Multi-provider vision evaluation: Groq -> Gemini -> Groq (last resort)
     analysis = None
     try:
-        analysis = analyze_image_groq(save_path)
-    except GroqAnalysisUnavailable as exc:
-        # The Groq vision safety-check (human/animal + material check) could
-        # not be reached after retrying. Do NOT silently fall back to the
-        # CNN-only path here — that CNN has no "not waste" category, so a
-        # photo of a person/animal or any non-waste object would otherwise
-        # get force-classified as waste just because the network call failed.
-        print("Groq analysis unavailable after retries:", exc)
+        analysis = analyze_image_multi_provider(save_path)
+    except AllProvidersUnavailable as exc:
+        # Every vision provider we have (Groq, then Gemini, then Groq again)
+        # failed. Do NOT silently fall back to the CNN-only path here —
+        # that CNN has no "not waste" category, so a photo of a
+        # person/animal or any non-waste object would otherwise get
+        # force-classified as waste just because every provider call failed.
+        print("All vision providers unavailable after retries:", exc)
         # Clean up the saved upload since we're not going to classify it.
         try:
             save_path.unlink(missing_ok=True)
@@ -2471,7 +2638,7 @@ def predict():
                      "Please check your internet connection and try again in a moment."
         }), 503
     except Exception as exc:  # noqa: BLE001
-        print("Groq analysis call failed:", exc)
+        print("Vision analysis call failed:", exc)
         analysis = None
 
     current_user_id = session.get("user_id")
