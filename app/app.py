@@ -23,6 +23,7 @@ import json
 import os
 import re
 import secrets
+import sys
 import time
 import urllib.parse
 import urllib.request
@@ -30,6 +31,13 @@ import uuid
 from datetime import datetime
 from functools import wraps
 from pathlib import Path
+
+# Vercel's Python runtime imports this file directly via importlib rather
+# than running it as a script, so app/'s own directory isn't automatically
+# on sys.path the way it would be with `python app.py` or `flask run`. Add
+# it explicitly so the sibling `from database import ...` below can be found
+# regardless of how this module gets loaded.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 try:
     from dotenv import load_dotenv
