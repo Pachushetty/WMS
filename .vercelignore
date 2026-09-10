@@ -1,0 +1,18 @@
+# Not needed at runtime — cuts the deployed bundle size down a lot.
+training/
+outputs/
+model/waste_model.h5
+
+# Sample/test images and any local-dev uploads (35MB+ of scratch files).
+# The app writes new uploads to Vercel Blob or /tmp at runtime instead.
+app/static/uploads/
+
+# Leftover local SQLite files from before the Postgres migration — unused.
+app/waste_management.db
+ecocycle.db
+
+# Local-only files
+.env
+.git
+__pycache__/
+*.pyc

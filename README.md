@@ -3,17 +3,6 @@
 ## Goal
 Train an image classifier that sorts a waste image into one of three categories:
 `Hazardous`, `Organic`, `Recyclable`.
-## Dataset
-
-The waste classification dataset used for training the EcoCycle
-waste detection model is available on Kaggle.
-
-**Dataset:** [Waste Items Dataset](https://www.kaggle.com/datasets/pachu08/waste-items)
-
-The dataset was used to train the waste classification model.
-The trained model is available in:
-
-`model/waste_model.h5`
 
 ## What you have
 ```
@@ -80,6 +69,55 @@ This will:
   - `accuracy_plot.png` and `loss_plot.png` — training vs validation curves
   - `classification_report.txt` — precision, recall, f1-score per class
   - `confusion_matrix.png` — confusion matrix image
+
+## Deploying to Vercel
+
+The dataset itself isn't needed to deploy — only the already-trained model
+(`model/waste_model.tflite`, ~9MB) is. A few things had to change from a
+typical local Flask setup to make this work as a Vercel serverless function:
+
+- **Model runtime**: the app runs `model/waste_model.tflite` via
+  `ai-edge-litert` instead of full TensorFlow, since TensorFlow alone is
+  too large for a serverless function bundle. If you retrain the model,
+  regenerate the `.tflite` file with `python training/convert_to_tflite.py`
+  (needs `training/requirements.txt`) — predictions are numerically
+  identical to the `.h5` model, just running through a lighter interpreter.
+- **Database**: already Postgres via `DATABASE_URL` (see `app/database.py`),
+  so no change was needed there — just point it at a real Postgres instance.
+  Easiest option: add a Postgres store (Neon integration) from your Vercel
+  project's Storage tab, which sets `DATABASE_URL` for you automatically.
+- **Uploaded photos**: Vercel's function filesystem is read-only except
+  `/tmp`, and `/tmp` doesn't persist between requests. So uploaded images
+  are saved to `/tmp` just long enough to run the classifier, then uploaded
+  to **Vercel Blob** for permanent storage (shown later in history/admin
+  dashboards). Add a Blob store from the Storage tab — it sets
+  `BLOB_READ_WRITE_TOKEN` for you. Locally, or on any host with a normal
+  persistent disk, this is skipped automatically and images just get saved
+  to `app/static/uploads/` like before.
+
+### Steps
+
+1. Push this project to a Git repo (GitHub/GitLab/Bitbucket).
+2. In Vercel: **Add New Project** → import the repo.
+3. In the project's **Storage** tab, add:
+   - A **Postgres** store (Neon integration) — sets `DATABASE_URL`.
+   - A **Blob** store — sets `BLOB_READ_WRITE_TOKEN`.
+4. In **Settings → Environment Variables**, add:
+   - `SECRET_KEY` — a random value, e.g. `python -c "import secrets; print(secrets.token_hex(32))"`
+   - `GROQ_API_KEY` — optional, free key from https://console.groq.com/keys
+   - `FLASK_ENV=production`
+5. Deploy. Vercel auto-detects `app/app.py` as the Flask entrypoint (no
+   build command needed) — see `vercel.json` for the one setting that's
+   configured (a 60s max duration, since the first classification after a
+   cold start can take a few seconds).
+6. On first request, `init_db()` creates the schema and a one-time admin
+   login — check your deployment's function logs for the generated admin
+   password (or set `ADMIN_USERNAME`/`ADMIN_PASSWORD` env vars beforehand,
+   see `.env.example`).
+
+`.vercelignore` excludes `training/`, `outputs/`, the old `.h5` model, and
+the ~35MB of sample/test images in `app/static/uploads/` from the deployed
+bundle, since none of that is needed at runtime.
 
 ## Notes
 - Images are resized to 224x224 and preprocessed using MobileNetV2's

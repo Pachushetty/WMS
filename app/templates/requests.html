@@ -83,7 +83,7 @@
           <div class="scan-history-card" id="scan-item-{{ item.id }}" data-status="{{ card_status }}">
             <div class="scan-history-thumb">
               {% if item.image_filename %}
-                <img src="/static/uploads/{{ item.image_filename }}" alt="{{ item.object_name }}">
+                <img src="{{ image_display_url(item.image_filename) }}" alt="{{ item.object_name }}">
               {% else %}
                 <div class="scan-history-thumb-fallback" style="display:flex; align-items:center; justify-content:center; font-size:1.3rem;">
                   {% if 'Hazard' in item.category %}<i class="bi bi-radioactive" style="color:var(--hazardous-color);"></i>{% elif 'Organic' in item.category %}<i class="bi bi-tree-fill" style="color:var(--organic-color);"></i>{% elif 'Recycl' in item.category %}<i class="bi bi-recycle" style="color:var(--brand-primary);"></i>{% else %}<i class="bi bi-box-seam" style="color:var(--text-muted);"></i>{% endif %}
@@ -145,7 +145,7 @@
                     <button type="button" class="btn btn-secondary btn-sm scan-history-request-btn"
                             data-object-name="{{ item.object_name }}" data-category="{{ item.category }}"
                             data-classification-id="{{ item.id }}"
-                            data-image-url="{{ '/static/uploads/' ~ item.image_filename if item.image_filename else '' }}"
+                            data-image-url="{{ image_display_url(item.image_filename) }}"
                             onclick="requestDisposalForItem(this)" title="Automatically find the nearest disposal location">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>

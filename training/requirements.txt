@@ -1,0 +1,14 @@
+# Dependencies needed only to (re)train the model — not needed to run the
+# deployed web app, and not installed on Vercel. Run from the project root:
+#   pip install -r training/requirements.txt
+tensorflow
+Pillow
+numpy
+matplotlib
+scikit-learn
+
+# Also needed once, after training, to produce model/waste_model.tflite
+# from model/waste_model.h5 for deployment (see README "Convert the model
+# for deployment" section). ai-edge-litert alone is only needed to *run*
+# the .tflite file (that's in the root requirements.txt); tensorflow above
+# already provides the converter.

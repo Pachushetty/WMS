@@ -1,8 +1,13 @@
-tensorflow-cpu==2.18.1
-Pillow
-numpy
+# Runtime dependencies for the deployed Flask app (app/app.py).
+# Training-only dependencies (TensorFlow, matplotlib, scikit-learn) live in
+# training/requirements.txt instead, since Vercel's serverless functions
+# have a size limit that full TensorFlow blows past. The web app uses
+# TensorFlow Lite (ai-edge-litert) to run the already-trained model.
 flask
-gunicorn
+numpy
+Pillow
+ai-edge-litert
 groq
 python-dotenv
 psycopg2-binary
+vercel_blob
