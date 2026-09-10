@@ -3,6 +3,17 @@
 ## Goal
 Train an image classifier that sorts a waste image into one of three categories:
 `Hazardous`, `Organic`, `Recyclable`.
+## Dataset
+
+The waste classification dataset used for training the EcoCycle
+waste detection model is available on Kaggle.
+
+**Dataset:** [Waste Items Dataset](https://www.kaggle.com/datasets/pachu08/waste-items)
+
+The dataset was used to train the waste classification model.
+The trained model is available in:
+
+`model/waste_model.h5`
 
 ## What you have
 ```
