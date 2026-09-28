@@ -1039,7 +1039,7 @@ except Exception as exc:  # noqa: BLE001 - we want to surface any load error cle
 
 # --- Groq vision model: 7-step waste & material classification ---
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
-GROQ_VISION_MODEL = "qwen/qwen3.6-27b"
+GROQ_VISION_MODEL = "qwen/qwen3.8-27b"
 
 groq_client = None
 groq_load_error = None
